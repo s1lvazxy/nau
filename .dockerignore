@@ -1,0 +1,10 @@
+node_modules
+.output
+dist
+.env
+.env.local
+.git
+ref
+design
+supabase/.temp
+*.log

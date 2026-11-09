@@ -1,0 +1,26 @@
+# Nau and its heartbeat. The database is a Supabase project you point it at (see docs/self-hosting.md).
+services:
+  nau:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SITE_URL: ${VITE_SITE_URL}
+    env_file: .env
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # Calls the scheduler every five minutes: syncs, autopilot, standing rules, webhooks.
+  tick:
+    image: curlimages/curl:8.10.1
+    depends_on: [nau]
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'while true; do curl -fsS -m 90 -X POST -H "Authorization: Bearer $$CRON_SECRET" http://nau:3000/api/cron/tick >/dev/null || echo "tick failed"; sleep 300; done'
+    restart: unless-stopped

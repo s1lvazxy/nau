@@ -1,0 +1,20 @@
+node_modules
+.output
+.vinxi
+.nitro
+dist
+.env
+.env.local
+.DS_Store
+supabase/.temp
+*.log
+
+# Third-party reference screenshots: not ours to publish
+ref/
+
+# Local agent settings and generated folders
+.claude/settings.local.json
+.tanstack
+
+# Brand source files (Photoshop, Illustrator): kept out of the code repository
+design/

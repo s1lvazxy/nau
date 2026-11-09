@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Mark_reversed" data-name="Mark reversed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g id="nau-mark">
+    <rect x="235" y="26" width="42" height="138" rx="21" ry="21" fill="#fff"/>
+    <rect x="348" y="235" width="138" height="42" rx="21" ry="21" fill="#fff"/>
+    <rect x="235" y="348" width="42" height="138" rx="21" ry="21" fill="#fff"/>
+    <rect x="26" y="235" width="138" height="42" rx="21" ry="21" fill="#fff"/>
+    <rect x="309.92" y="143.08" width="76" height="42" rx="21" ry="21" transform="translate(-14.11 294.08) rotate(-45)" fill="#fff"/>
+    <rect x="326.92" y="309.92" width="42" height="76" rx="21" ry="21" transform="translate(-144.11 347.92) rotate(-45)" fill="#fff"/>
+    <rect x="126.08" y="326.92" width="76" height="42" rx="21" ry="21" transform="translate(-197.96 217.92) rotate(-45)" fill="#fff"/>
+    <rect x="143.08" y="126.08" width="42" height="76" rx="21" ry="21" transform="translate(-67.96 164.08) rotate(-45)" fill="#fff"/>
+    <rect x="220" y="220" width="72" height="72" rx="18" ry="18" fill="#fff"/>
+  </g>
+</svg>
