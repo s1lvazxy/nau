@@ -1,0 +1,5 @@
+[
+ {"out":"r-hero.png","w":3200,"h":1800,"center":[0.745,0.5],"scale":0.45,"time":3.6,"pointer":[0.3,-0.2]},
+ {"out":"r-macro.png","w":3200,"h":1800,"center":[0.66,0.52],"scale":1.25,"time":7,"pointer":[1.4,-0.8],"presence":1},
+ {"out":"r-horizon.png","w":3200,"h":1800,"center":[0.5,1.04],"scale":0.8,"time":5,"pointer":[2.2,-4.5]}
+]

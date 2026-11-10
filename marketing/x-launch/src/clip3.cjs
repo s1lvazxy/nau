@@ -1,0 +1,31 @@
+// Clip 3 — Approvals: every suggestion says why, money waits for a yes
+const R = require('./reclib.cjs');
+(async () => {
+  const s = await R.open();
+  const p = s.page;
+  await R.start(s, '03-approvals');
+  await R.sleep(700);
+  await R.go(s, await R.pt(s, p.getByText('Approvals', { exact: true })), 900);
+  await R.press(s);
+  await R.sleep(1300);
+  await R.caption(s, 'Every suggestion says why.');
+  const title = await R.pt(s, p.getByText('Reorder from Quinta das Pedras'));
+  const why = await R.pt(s, p.getByText('will run out before a new delivery', { exact: false }));
+  await R.shot(s, 1.42, [888, why[1] + 50], [why[0] - 80, why[1]], 1.4);
+  await R.sleep(600);
+  await R.go(s, await R.pt(s, p.getByText('minimum', { exact: false }).first(), 40, 0), 600);
+  await R.sleep(500);
+  await R.go(s, await R.pt(s, p.getByText('order value').first(), 0, -26), 900);
+  await R.sleep(900);
+  await R.caption(s, 'Money waits for your yes.');
+  const approve = p.getByText('Approve as draft').first();
+  await R.go(s, await R.pt(s, approve), 1000);
+  await R.sleep(800);
+  await R.press(s);
+  await R.sleep(900);
+  await R.caption(s, null);
+  await R.shot(s, 1, [720, 405], [760, 300], 1.4);
+  await R.sleep(1800);
+  await R.stop(s, '03-approvals');
+  await s.browser.close();
+})();
