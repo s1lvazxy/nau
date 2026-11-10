@@ -86,11 +86,29 @@ pnpm dev            # http://localhost:3100
 
 You need Node 22.9 or later and pnpm. With no configuration Nau runs in **local mode**: accounts and data stay in your browser, and Operator uses its built-in engine. Imports, the journal, undo and the policy all work.
 
-| | What you get | What it needs | Commands |
-| --- | --- | --- | --- |
-| **Try it** | Imports, Operator, journal and undo, in your browser | Node, pnpm | the three lines above |
-| **On your computer** | Everything: shared accounts, connectors, the API, webhooks, the scheduled Operator | plus Docker and the Supabase CLI | `supabase start`<br>`pnpm setup:local`<br>`pnpm dev` |
-| **On a server** | The same, for the whole team, behind your own domain | a Supabase project and a server with Docker | `supabase db push`<br>`cp .env.example .env`<br>`docker compose up -d --build` |
+There are three ways to run it:
+
+| | What you get | What it needs |
+| --- | --- | --- |
+| **Try it** | Imports, Operator, journal and undo, in your browser | Node and pnpm: the three lines above |
+| **On your computer** | Everything: shared accounts, connectors, the API, webhooks, the scheduled Operator | plus Docker and the Supabase CLI |
+| **On a server** | The same, for the whole team, behind your own domain | a Supabase project and a server with Docker |
+
+On your computer:
+
+```bash
+supabase start      # database and accounts, in Docker
+pnpm setup:local    # fills in .env and generates the secrets
+pnpm dev            # everything connected, on localhost:3100
+```
+
+On a server:
+
+```bash
+supabase db push                # applies the schema to your database
+cp .env.example .env            # address, keys and secrets
+docker compose up -d --build    # the app and the scheduler
+```
 
 [`.env.example`](.env.example) lists every setting, and [docs/self-hosting.md](docs/self-hosting.md) walks through a company installation: database, secrets, the scheduler, backups.
 

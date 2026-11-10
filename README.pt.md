@@ -86,11 +86,29 @@ pnpm dev            # http://localhost:3100
 
 Precisas de Node 22.9 ou superior e de pnpm. Sem configuração nenhuma, o Nau corre em **modo local**: as contas e os dados ficam no teu browser e o Operador usa o motor interno. Importações, registo, desfazer e política funcionam.
 
-| | O que tens | O que é preciso | Comandos |
-| --- | --- | --- | --- |
-| **Experimentar** | Importações, Operador, registo e desfazer, no teu browser | Node, pnpm | as três linhas acima |
-| **No teu computador** | Tudo: contas partilhadas, conectores, API, webhooks, o Operador agendado | mais Docker e a CLI do Supabase | `supabase start`<br>`pnpm setup:local`<br>`pnpm dev` |
-| **No servidor** | O mesmo, para a equipa toda, atrás do teu domínio | um projeto Supabase e um servidor com Docker | `supabase db push`<br>`cp .env.example .env`<br>`docker compose up -d --build` |
+Há três maneiras de o correr:
+
+| | O que tens | O que é preciso |
+| --- | --- | --- |
+| **Experimentar** | Importações, Operador, registo e desfazer, no teu browser | Node e pnpm: as três linhas acima |
+| **No teu computador** | Tudo: contas partilhadas, conectores, API, webhooks, o Operador agendado | mais Docker e a CLI do Supabase |
+| **No servidor** | O mesmo, para a equipa toda, atrás do teu domínio | um projeto Supabase e um servidor com Docker |
+
+No teu computador:
+
+```bash
+supabase start      # base de dados e contas, em Docker
+pnpm setup:local    # preenche o .env e gera os segredos
+pnpm dev            # tudo ligado, em localhost:3100
+```
+
+No servidor:
+
+```bash
+supabase db push                # aplica o esquema à tua base de dados
+cp .env.example .env            # endereço, chaves e segredos
+docker compose up -d --build    # a aplicação e o agendador
+```
 
 O [`.env.example`](.env.example) lista todas as definições, e o [guia de alojamento](docs/self-hosting.md) (em inglês) acompanha uma instalação de empresa: base de dados, segredos, agendador, cópias de segurança.
 
