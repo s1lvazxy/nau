@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 import type { ChangeSet } from '~/data/changeset'
 import type { Actor } from '~/lib/types'
+import { tr } from '~/i18n'
 
 export interface ActionsCtx {
   commit: (cs: ChangeSet, opts?: { success?: string; description?: string; undo?: ChangeSet }) => Promise<void>
@@ -14,6 +15,6 @@ export const ActionsContext = createContext<ActionsCtx | null>(null)
 
 export function useActions(): ActionsCtx {
   const c = useContext(ActionsContext)
-  if (!c) throw new Error('useActions must be used inside ActionsContext')
+  if (!c) throw new Error(tr('useActions must be used inside ActionsContext'))
   return c
 }

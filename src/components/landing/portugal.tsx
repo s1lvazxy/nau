@@ -3,6 +3,7 @@ import NumberFlow from '@number-flow/react'
 import { CheckIcon, DownloadSimpleIcon, FileTextIcon } from '@phosphor-icons/react'
 import { cn } from '~/lib/utils'
 import { Container, Rule, ScrollTrigger, gsap, useGSAP, useInView } from './frame'
+import { locale, msg, tr } from '~/i18n'
 
 /* Each Portuguese detail has a small working instrument. `on` starts its motion. */
 
@@ -13,8 +14,8 @@ function SaftVisual({ on }: { on: boolean }) {
       <div className="flex shrink-0 items-center gap-2.5 rounded-[12px] bg-white/[0.05] px-3 py-2.5 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]">
         <FileTextIcon size={18} className="text-[#ffb48a]" />
         <div>
-          <div className="font-mono text-[11px] text-white/85">saft_outubro.xml</div>
-          <div className="font-mono text-[10px] text-white/35">2,4 MB · Moloni</div>
+          <div className="font-mono text-[11px] text-white/85">{tr('saft_outubro.xml')}</div>
+          <div className="font-mono text-[10px] text-white/35">{tr('2,4 MB · Moloni')}</div>
         </div>
       </div>
       <div className="relative h-px flex-1 bg-white/10">
@@ -23,12 +24,12 @@ function SaftVisual({ on }: { on: boolean }) {
       </div>
       <div className="grid shrink-0 gap-1.5 text-right">
         <div className="flex items-baseline justify-end gap-2">
-          <span className="text-[11px] text-white/40">faturas</span>
-          <NumberFlow value={on ? 1284 : 0} locales="pt-PT" className="tabular text-[18px] font-medium tracking-[-0.03em] text-white" transformTiming={{ duration: 1500, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }} />
+          <span className="text-[11px] text-white/40">{tr('faturas')}</span>
+          <NumberFlow value={on ? 1284 : 0} locales={locale()} className="tabular text-[18px] font-medium tracking-[-0.03em] text-white" transformTiming={{ duration: 1500, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }} />
         </div>
         <div className="flex items-baseline justify-end gap-2">
-          <span className="text-[11px] text-white/40">movimentos</span>
-          <NumberFlow value={on ? 6920 : 0} locales="pt-PT" className="tabular text-[18px] font-medium tracking-[-0.03em] text-white" transformTiming={{ duration: 1800, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }} />
+          <span className="text-[11px] text-white/40">{tr('movimentos')}</span>
+          <NumberFlow value={on ? 6920 : 0} locales={locale()} className="tabular text-[18px] font-medium tracking-[-0.03em] text-white" transformTiming={{ duration: 1800, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }} />
         </div>
       </div>
     </div>
@@ -51,7 +52,7 @@ function NifVisual({ on }: { on: boolean }) {
   const done = n >= full.length
   return (
     <div className="w-full max-w-[280px]">
-      <div className="mb-1.5 text-[11px] text-white/45">NIF do fornecedor</div>
+      <div className="mb-1.5 text-[11px] text-white/45">{tr('NIF do fornecedor')}</div>
       <div className={cn('flex h-11 items-center gap-2 rounded-[11px] bg-white/[0.04] px-3.5 transition-shadow duration-300', done ? 'shadow-[inset_0_0_0_1px_rgb(70_167_88/0.6)]' : 'shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)]')}>
         <span className="tabular font-mono text-[15px] tracking-[0.04em] text-white">{full.slice(0, n)}</span>
         {!done && <span className="h-4 w-px animate-[blink_1s_steps(2,start)_infinite] bg-[#ff5b1f]" />}
@@ -60,8 +61,8 @@ function NifVisual({ on }: { on: boolean }) {
         </span>
       </div>
       <div className={cn('mt-2 flex items-center gap-1.5 text-[11.5px] transition-opacity duration-300', done ? 'opacity-100' : 'opacity-0')}>
-        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/75">Pessoa coletiva</span>
-        <span className="text-white/40">dígito de controlo válido</span>
+        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/75">{tr('Pessoa coletiva')}</span>
+        <span className="text-white/40">{tr('dígito de controlo válido')}</span>
       </div>
     </div>
   )
@@ -69,9 +70,9 @@ function NifVisual({ on }: { on: boolean }) {
 
 /* ── IVA: the same three rates, in three places ── */
 const REGIONS: [string, number[]][] = [
-  ['Continente', [23, 13, 6]],
+  [msg('Continente'), [23, 13, 6]],
   ['Madeira', [22, 12, 4]],
-  ['Açores', [16, 9, 4]],
+  [msg('Açores'), [16, 9, 4]],
 ]
 function IvaVisual({ on }: { on: boolean }) {
   const [r, setR] = useState(0)
@@ -86,12 +87,12 @@ function IvaVisual({ on }: { on: boolean }) {
         <span className="absolute inset-y-1 left-1 w-[calc((100%-8px)/3)] rounded-full bg-white/[0.1] transition-transform duration-500 ease-[var(--ease-out)]" style={{ transform: `translateX(${r * 100}%)` }} />
         {REGIONS.map(([name], i) => (
           <span key={name} className={cn('relative z-[1] py-1 text-center text-[11px] transition-colors duration-300', i === r ? 'text-white' : 'text-white/40')}>
-            {name}
+            {tr(name)}
           </span>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-2">
-        {['Normal', 'Intermédia', 'Reduzida'].map((label, i) => (
+        {['Normal', tr('Intermédia'), tr('Reduzida')].map((label, i) => (
           <div key={label} className="rounded-[10px] bg-white/[0.03] px-2.5 py-2 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)]">
             <div className="flex items-baseline text-[20px] font-medium tracking-[-0.03em] text-white">
               <NumberFlow value={REGIONS[r][1][i]} className="tabular" />
@@ -139,16 +140,16 @@ function CalendarVisual({ on }: { on: boolean }) {
       </div>
       <div className="w-[118px] shrink-0 space-y-2 text-[11px]">
         <div className="flex items-center justify-between text-white/80">
-          <span>13 · Sto. António</span>
+          <span>{tr('13 · Sto. António')}</span>
           <span className="text-[#ffb48a]">×1,6</span>
         </div>
         <div className="flex items-center justify-between text-white/60">
-          <span>24 · S. João</span>
-          <span className="text-white/45">Porto</span>
+          <span>{tr('24 · S. João')}</span>
+          <span className="text-white/45">{tr('Porto')}</span>
         </div>
         <div className="flex items-center justify-between text-white/60">
           <span>4 · 10</span>
-          <span className="text-white/45">feriados</span>
+          <span className="text-white/45">{tr('feriados')}</span>
         </div>
       </div>
     </div>
@@ -166,10 +167,10 @@ function AtVisual({ on }: { on: boolean }) {
     <div className="w-full">
       <div className="overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)]">
         <div className="grid grid-cols-[22px_1fr_44px_30px] gap-2 bg-white/[0.04] px-2.5 py-1.5 font-mono text-[9.5px] text-white/40">
-          <span>Cat</span>
-          <span>ProductCode</span>
-          <span className="text-right">Qty</span>
-          <span>Un</span>
+          <span>{tr('Cat')}</span>
+          <span>{tr('ProductCode')}</span>
+          <span className="text-right">{tr('Qty')}</span>
+          <span>{tr('Un')}</span>
         </div>
         {rows.map((r, i) => (
           <div key={r[1]} className={cn('grid grid-cols-[22px_1fr_44px_30px] gap-2 border-t border-white/[0.05] px-2.5 py-1.5 font-mono text-[10.5px] text-white/75 transition-[opacity,transform] duration-500 ease-[var(--ease-out)]', on ? 'opacity-100' : 'translate-y-1 opacity-0')} style={{ transitionDelay: on ? `${200 + i * 140}ms` : '0ms' }}>
@@ -181,9 +182,9 @@ function AtVisual({ on }: { on: boolean }) {
         ))}
       </div>
       <div className="mt-2.5 flex items-center justify-between">
-        <span className="text-[11px] text-white/40">Portaria n.º 2/2015</span>
+        <span className="text-[11px] text-white/40">{tr('Portaria n.º 2/2015')}</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-black">
-          <DownloadSimpleIcon size={11} weight="bold" /> inventario_2026.csv
+          <DownloadSimpleIcon size={11} weight="bold" /> {tr('inventario_2026.csv')}
         </span>
       </div>
     </div>
@@ -192,22 +193,22 @@ function AtVisual({ on }: { on: boolean }) {
 
 /* ── Orders: written the way suppliers expect them ── */
 function OrderEmail({ on }: { on: boolean }) {
-  const lines = ['24 × Vinho Verde Alvarinho 75cl', '6 × Colares Ramisco 50cl', '12 × Queijo da Serra DOP']
+  const lines = [tr('24 × Vinho Verde Alvarinho 75cl'), tr('6 × Colares Ramisco 50cl'), tr('12 × Queijo da Serra DOP')]
   return (
     <div className="w-full max-w-[460px] rounded-[14px] bg-white/[0.03] text-left shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)]">
       <div className="space-y-1 border-b border-white/[0.06] px-4 py-3 text-[11.5px]">
         <div className="flex gap-2">
-          <span className="w-14 text-white/35">Para</span>
-          <span className="text-white/80">Paulo · Quinta das Pedras</span>
+          <span className="w-14 text-white/35">{tr('Para')}</span>
+          <span className="text-white/80">{tr('Paulo · Quinta das Pedras')}</span>
         </div>
         <div className="flex gap-2">
-          <span className="w-14 text-white/35">Assunto</span>
-          <span className="text-white/80">Encomenda EC-141 · Casa Ribeira</span>
+          <span className="w-14 text-white/35">{tr('Assunto')}</span>
+          <span className="text-white/80">{tr('Encomenda EC-141 · Casa Ribeira')}</span>
         </div>
       </div>
       <div className="px-4 py-3 text-[12px] leading-relaxed text-white/70">
-        <p>Bom dia Paulo,</p>
-        <p className="mt-1">Segue a nossa encomenda, para entrega na quinta-feira no armazém de Marvila:</p>
+        <p>{tr('Bom dia Paulo,')}</p>
+        <p className="mt-1">{tr('Segue a nossa encomenda, para entrega na quinta-feira no armazém de Marvila:')}</p>
         <ul className="mt-2 space-y-0.5 font-mono text-[11px] text-white/85">
           {lines.map((l, i) => (
             <li key={l} className={cn('transition-opacity duration-500', on ? 'opacity-100' : 'opacity-0')} style={{ transitionDelay: on ? `${300 + i * 220}ms` : '0ms' }}>
@@ -215,7 +216,7 @@ function OrderEmail({ on }: { on: boolean }) {
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-white/45">NIF 508 123 453 · Obrigado!</p>
+        <p className="mt-2 text-white/45">{tr('NIF 508 123 453 · Obrigado!')}</p>
       </div>
     </div>
   )
@@ -224,12 +225,12 @@ function OrderEmail({ on }: { on: boolean }) {
 /* ───────────────────────── The index ───────────────────────── */
 
 const ITEMS: { word: string; title: string; body: string; V: (p: { on: boolean }) => ReactNode }[] = [
-  { word: 'SAF-T', title: 'Entra o SAF-T, sai o stock', body: 'Continuas no teu software de faturação certificado. Largas o ficheiro e cada linha de fatura passa a movimento de stock — sem plugins.', V: SaftVisual },
-  { word: 'NIF', title: 'NIF que se valida sozinho', body: 'Validado enquanto escreves, com o tipo de entidade. Acabaram as gralhas nas encomendas.', V: NifVisual },
-  { word: 'IVA', title: 'IVA do continente e das ilhas', body: '23, 13 e 6% — e as taxas da Madeira e dos Açores quando vendes lá.', V: IvaVisual },
-  { word: 'Inventário AT', title: 'O ficheiro de inventário da AT', body: 'O inventário de fecho no formato da portaria, num clique, pronto para 31 de janeiro.', V: AtVisual },
-  { word: 'Santo António', title: 'Um calendário que conhece Portugal', body: 'Feriados, Páscoa, Santo António e São João entram em cada previsão.', V: CalendarVisual },
-  { word: 'Encomendas', title: 'Encomendas como os fornecedores gostam', body: 'Em português, com o teu NIF, a morada e a data de entrega. Aprovas no Nau e segue pelo teu email.', V: OrderEmail },
+  { word: 'SAF-T', title: msg('Entra o SAF-T, sai o stock'), body: msg('Continuas no teu software de faturação certificado. Largas o ficheiro e cada linha de fatura passa a movimento de stock — sem plugins.'), V: SaftVisual },
+  { word: 'NIF', title: msg('NIF que se valida sozinho'), body: msg('Validado enquanto escreves, com o tipo de entidade. Acabaram as gralhas nas encomendas.'), V: NifVisual },
+  { word: 'IVA', title: msg('IVA do continente e das ilhas'), body: msg('23, 13 e 6% — e as taxas da Madeira e dos Açores quando vendes lá.'), V: IvaVisual },
+  { word: msg('Inventário AT'), title: msg('O ficheiro de inventário da AT'), body: msg('O inventário de fecho no formato da portaria, num clique, pronto para 31 de janeiro.'), V: AtVisual },
+  { word: msg('Santo António'), title: msg('Um calendário que conhece Portugal'), body: msg('Feriados, Páscoa, Santo António e São João entram em cada previsão.'), V: CalendarVisual },
+  { word: msg('Encomendas'), title: msg('Encomendas como os fornecedores gostam'), body: msg('Em português, com o teu NIF, a morada e a data de entrega. Aprovas no Nau e segue pelo teu email.'), V: OrderEmail },
 ]
 
 function Detail({ i, on, className }: { i: number; on: boolean; className?: string }) {
@@ -240,8 +241,8 @@ function Detail({ i, on, className }: { i: number; on: boolean; className?: stri
         <it.V on={on} />
       </div>
       <div className="px-2 pt-5 pb-2">
-        <h3 className="text-[19px] font-medium tracking-[-0.02em] text-white">{it.title}</h3>
-        <p className="mt-1.5 text-[14.5px] leading-[1.6] text-white/52">{it.body}</p>
+        <h3 className="text-[19px] font-medium tracking-[-0.02em] text-white">{tr(it.title)}</h3>
+        <p className="mt-1.5 text-[14.5px] leading-[1.6] text-white/52">{tr(it.body)}</p>
       </div>
     </div>
   )
@@ -286,7 +287,7 @@ export function Portugal() {
         <div className="grid gap-x-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,430px)]">
           <div>
             <h2 id="pt-title" data-lines className="max-w-[26ch] text-[clamp(1.5rem,2.3vw,2rem)] leading-[1.18] font-medium tracking-[-0.025em] text-white">
-              Feito para Portugal. <span className="text-white/38">Os detalhes que o teu contabilista vai notar.</span>
+              {tr('Feito para Portugal.')} <span className="text-white/38">{tr('Os detalhes que o teu contabilista vai notar.')}</span>
             </h2>
 
             <ul role="tablist" aria-orientation="vertical" aria-labelledby="pt-title" className="relative mt-12 md:mt-16">
@@ -308,9 +309,9 @@ export function Portugal() {
                       className="group block w-full text-left text-[clamp(2.6rem,7.1vw,6.4rem)] leading-[1.06] font-medium tracking-[-0.045em] outline-none"
                     >
                       <span className={cn('relative inline-block transition-transform duration-500 ease-[var(--ease-out)] motion-reduce:transition-none', on && 'lg:translate-x-11')}>
-                        <span className={cn('transition-colors duration-300', on ? 'text-transparent' : 'text-white/[0.17] group-hover:text-white/40 group-focus-visible:text-white/40')}>{it.word}</span>
+                        <span className={cn('transition-colors duration-300', on ? 'text-transparent' : 'text-white/[0.17] group-hover:text-white/40 group-focus-visible:text-white/40')}>{tr(it.word)}</span>
                         <span aria-hidden className={cn('text-ember absolute inset-0 pb-[0.12em] transition-opacity duration-300', on ? 'opacity-100' : 'opacity-0')}>
-                          {it.word}
+                          {tr(it.word)}
                         </span>
                       </span>
                     </button>

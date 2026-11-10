@@ -8,6 +8,7 @@ import { executeTool, contextLine } from './executors'
 import { approveAction, rejectAction, undoAction } from './policy'
 import { planOffline } from './offline'
 import type { ChatPart, ChatTurn, ToolExec } from './types'
+import { tr } from '~/i18n'
 
 export interface OperatorEnv {
   getSnapshot: () => Snapshot | undefined
@@ -19,6 +20,8 @@ export interface OperatorEnv {
   path: string
   mode: 'cloud' | 'local' | 'demo'
   authToken?: string | null
+  /** The installation sends email itself */
+  mail?: boolean
 }
 
 type Engine = 'claude' | 'offline'
@@ -60,13 +63,13 @@ export const useOperator = create<OperatorState>((set, get) => {
     const v = validateToolInput(name, rawInput)
     const snapshot = env.getSnapshot()
     if (!v.ok || !snapshot) {
-      const error = v.ok ? 'Workspace not loaded' : v.error
+      const error = v.ok ? tr('Workspace not loaded') : v.error
       patchTurn(turnId, (t) => ({ ...t, parts: t.parts.map((p) => (p.type === 'tool' && p.id === partId ? { ...p, status: 'error', error } : p)) }))
       return { error }
     }
     let exec: ToolExec
     try {
-      exec = executeTool(v.name as ToolName, v.input as Record<string, unknown>, { snapshot, actor: { kind: 'agent', name: 'Operator' }, canWrite: env.canWrite, dashboardId: env.dashboardId, source: 'operator' })
+      exec = executeTool(v.name as ToolName, v.input as Record<string, unknown>, { snapshot, actor: { kind: 'agent', name: 'Operator' }, canWrite: env.canWrite, dashboardId: env.dashboardId, source: 'operator', mail: env.mail })
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e)
       patchTurn(turnId, (t) => ({ ...t, parts: t.parts.map((p) => (p.type === 'tool' && p.id === partId ? { ...p, status: 'error', error } : p)) }))
@@ -130,7 +133,7 @@ export const useOperator = create<OperatorState>((set, get) => {
     })
     if (!res.ok || !res.body) {
       const msg = await res.text().catch(() => '')
-      throw new Error(res.status === 429 ? 'Operator is busy — try again in a minute.' : msg || `Operator unavailable (${res.status})`)
+      throw new Error(res.status === 429 ? tr('Operator is busy — try again in a minute.') : msg || tr('Operator unavailable ({0})', res.status))
     }
     const reader = res.body.getReader()
     const dec = new TextDecoder()
@@ -164,10 +167,10 @@ export const useOperator = create<OperatorState>((set, get) => {
         else if (ev.t === 'block') current = null
         else if (ev.t === 'final' && ev.message) final = ev.message
         else if (ev.t === 'model' && ev.model) set({ model: ev.model })
-        else if (ev.t === 'error') throw new Error(ev.error || 'Operator error')
+        else if (ev.t === 'error') throw new Error(ev.error || tr('Operator error'))
       }
     }
-    if (!final) throw new Error('The response was cut off. Try again.')
+    if (!final) throw new Error(tr('The response was cut off. Try again.'))
     // Replace live parts with the exact content of the final message
     const parts: ChatPart[] = []
     for (const b of final.content) {
@@ -191,12 +194,12 @@ export const useOperator = create<OperatorState>((set, get) => {
       const final = await streamOnce(turnId, env, signal)
       set((st) => ({ api: [...st.api, { role: 'assistant', content: final.content as Anthropic.Beta.BetaContentBlockParam[] }] }))
       if (final.stop_reason === 'refusal') {
-        pushPart(turnId, { type: 'text', text: 'I can’t help with that one. Ask me anything about your stock, sales or suppliers.' })
+        pushPart(turnId, { type: 'text', text: tr('I can’t help with that one. Ask me anything about your stock, sales or suppliers.') })
         return
       }
       const uses = final.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === 'tool_use')
       if (final.stop_reason === 'max_tokens' && uses.length) {
-        pushPart(turnId, { type: 'text', text: 'That got long — ask me again more specifically and I’ll keep it shorter.' })
+        pushPart(turnId, { type: 'text', text: tr('That got long — ask me again more specifically and I’ll keep it shorter.') })
         return
       }
       if (final.stop_reason !== 'tool_use' || !uses.length) return
@@ -272,7 +275,7 @@ export const useOperator = create<OperatorState>((set, get) => {
       const snap = env.getSnapshot()
       const a = snap?.actions.find((x) => x.id === id)
       if (!snap || !a || a.status !== 'pending') return
-      await env.commit(approveAction(snap, a, env.actor), { success: 'Approved', description: a.title })
+      await env.commit(approveAction(snap, a, env.actor), { success: tr('Approved'), description: a.title })
       set((st) => ({ notes: [...st.notes, `approved “${a.title}”`] }))
     },
     async reject(id, env) {
@@ -285,7 +288,7 @@ export const useOperator = create<OperatorState>((set, get) => {
       const snap = env.getSnapshot()
       const a = snap?.actions.find((x) => x.id === id)
       if (!snap || !a || a.status !== 'applied' || !a.undo) return
-      await env.commit(undoAction(snap, a, env.actor), { success: 'Undone', description: a.title })
+      await env.commit(undoAction(snap, a, env.actor), { success: tr('Undone'), description: a.title })
       set((st) => ({ notes: [...st.notes, `undid “${a.title}”`] }))
     },
     stop() {

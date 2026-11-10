@@ -11,6 +11,7 @@ import { placeWidget, executeTool } from '~/agent/executors'
 import { planOffline } from '~/agent/offline'
 import { useActions } from '~/components/app/actions'
 import { KPI_METRICS, WIDGET_DEFS, WidgetBody, WidgetFrame, widgetAction } from './widgets'
+import { tr } from '~/i18n'
 
 const ROW = 48
 const GAP: [number, number] = [14, 14]
@@ -103,51 +104,51 @@ function WidgetSettings({ widget, onClose, onSave }: { widget: Widget; onClose: 
     <Modal
       open
       onOpenChange={(o) => !o && onClose()}
-      title={`${def.name} settings`}
+      title={tr('{0} settings', def.name)}
       description={def.description}
       size="sm"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {tr('Cancel')}
           </Button>
           <Button variant="primary" onClick={() => onSave(w)}>
-            Save
+            {tr('Save')}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
-        <FormField label="Title" optional>
+        <FormField label={tr('Title')} optional>
           <Input value={w.title ?? ''} placeholder={def.title(widget, s)} onChange={(e) => setW({ ...w, title: e.target.value || undefined })} />
         </FormField>
         {w.type === 'kpi' && (
-          <FormField label="Metric">
+          <FormField label={tr('Metric')}>
             <Select value={String(w.config.metric ?? 'stockValue')} onChange={(v) => set('metric', v)} options={KPI_METRICS} />
           </FormField>
         )}
         {w.type === 'salesTrend' && (
-          <FormField label="Period">
+          <FormField label={tr('Period')}>
             <Select
               value={Number(w.config.days ?? 30)}
               onChange={(v) => set('days', v)}
               options={[
-                { value: 14, label: '14 days' },
-                { value: 30, label: '30 days' },
-                { value: 60, label: '60 days' },
-                { value: 90, label: '90 days' },
+                { value: 14, label: tr('14 days') },
+                { value: 30, label: tr('30 days') },
+                { value: 60, label: tr('60 days') },
+                { value: 90, label: tr('90 days') },
               ]}
             />
           </FormField>
         )}
         {w.type === 'itemForecast' && (
-          <FormField label="Item">
+          <FormField label={tr('Item')}>
             <Select value={String(w.config.itemId ?? '')} onChange={(v) => set('itemId', v)} options={s.items.filter((i) => !i.archived).map((i) => ({ value: i.id, label: i.name }))} />
           </FormField>
         )}
         {w.type === 'lowStock' && (
-          <FormField label="Location">
-            <Select value={String(w.config.locationId ?? 'all')} onChange={(v) => set('locationId', v === 'all' ? undefined : v)} options={[{ value: 'all', label: 'All locations' }, ...s.locations.map((l) => ({ value: l.id, label: l.name }))]} />
+          <FormField label={tr('Location')}>
+            <Select value={String(w.config.locationId ?? 'all')} onChange={(v) => set('locationId', v === 'all' ? undefined : v)} options={[{ value: 'all', label: tr('All locations') }, ...s.locations.map((l) => ({ value: l.id, label: l.name }))]} />
           </FormField>
         )}
       </div>
@@ -170,7 +171,7 @@ export function WidgetGallery({ open, onOpenChange, dashboard, onAdd }: { open: 
     const plan = planOffline(s, /widget|dashboard/i.test(text) ? text : `add a widget ${text}`)
     const call = plan.calls.find((c) => c.name === 'add_widget')
     if (!call) {
-      setHint('Try something like “sales trend for 60 days” or “stock value number”.')
+      setHint(tr('Try something like “sales trend for 60 days” or “stock value number”.'))
       return
     }
     const res = executeTool('add_widget', { ...call.input, dashboard: dashboard.name }, { snapshot: { ...s, dashboards: s.dashboards.map((d) => (d.id === dashboard.id ? dashboard : d)) }, actor, canWrite, dashboardId: dashboard.id })
@@ -178,20 +179,20 @@ export function WidgetGallery({ open, onOpenChange, dashboard, onAdd }: { open: 
     if (next) {
       onAdd(next)
       setPrompt('')
-      setHint(`Added — ${res.summary.toLowerCase()}.`)
+      setHint(tr('Added — {0}.', res.summary.toLowerCase()))
     }
   }
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="Add widgets" description="Click to add. Drag the header to move, the corner to resize." width={420}>
+    <Sheet open={open} onOpenChange={onOpenChange} title={tr('Add widgets')} description={tr('Click to add. Drag the header to move, the corner to resize.')} width={420}>
       <div className="flex flex-col gap-5 p-5">
         <div className="rounded-[14px] bg-surface-2 p-3 shadow-[inset_0_0_0_1px_var(--gray-a3)]">
           <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-medium text-ink">
-            <MagicWandIcon size={14} className="text-accent" /> Describe a widget
+            <MagicWandIcon size={14} className="text-accent" /> {tr('Describe a widget')}
           </div>
           <div className="flex gap-2">
-            <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ask()} placeholder="e.g. sales trend for 60 days" />
+            <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ask()} placeholder={tr('e.g. sales trend for 60 days')} />
             <Button variant="primary" onClick={ask}>
-              Add
+              {tr('Add')}
             </Button>
           </div>
           {hint && <p className="mt-2 text-[12px] text-ink-3">{hint}</p>}

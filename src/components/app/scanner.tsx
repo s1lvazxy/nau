@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { BarcodeIcon, CameraSlashIcon } from '@phosphor-icons/react'
 import { Input } from '~/components/ui/form'
 import { cn } from '~/lib/utils'
+import { tr } from '~/i18n'
 
 type Detector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> }
 
@@ -92,10 +93,10 @@ export function Scanner({ onDetect, className, compact }: { onDetect: (code: str
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
             {state === 'denied' || state === 'unsupported' ? <CameraSlashIcon size={26} className="text-white/70" /> : <BarcodeIcon size={26} className="text-white/70" />}
-            <p className="max-w-[260px] text-[13px] text-white/70">{state === 'denied' ? 'Camera access was blocked. Allow it in your browser settings, or type the code below.' : state === 'unsupported' ? 'This browser can’t use the camera here. Type or scan the code below.' : 'Point the camera at a barcode. Works best in good light.'}</p>
+            <p className="max-w-[260px] text-[13px] text-white/70">{state === 'denied' ? tr('Camera access was blocked. Allow it in your browser settings, or type the code below.') : state === 'unsupported' ? tr('This browser can’t use the camera here. Type or scan the code below.') : tr('Point the camera at a barcode. Works best in good light.')}</p>
             {(state === 'idle' || state === 'starting') && (
               <button type="button" onClick={() => setState('starting')} className="press mt-1 h-9 rounded-full bg-white px-4 text-[13px] font-medium text-black">
-                {state === 'starting' ? 'Starting camera…' : 'Start camera'}
+                {state === 'starting' ? tr('Starting camera…') : tr('Start camera')}
               </button>
             )}
           </div>
@@ -110,7 +111,7 @@ export function Scanner({ onDetect, className, compact }: { onDetect: (code: str
           }
         }}
       >
-        <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Type a barcode or SKU — USB scanners work here too" leading={<BarcodeIcon size={14} />} aria-label="Barcode or SKU" inputMode="numeric" />
+        <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder={tr('Type a barcode or SKU — USB scanners work here too')} leading={<BarcodeIcon size={14} />} aria-label={tr('Barcode or SKU')} inputMode="numeric" />
       </form>
     </div>
   )

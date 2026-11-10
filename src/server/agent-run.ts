@@ -5,6 +5,7 @@ import { autopilotPass } from '~/agent/autopilot'
 import { contextLine, executeTool } from '~/agent/executors'
 import { HEADLESS_PROMPT, SYSTEM_PROMPT, toolDefinitions, validateToolInput, type ToolName } from '~/agent/schema'
 import { admin, commit, load } from './db'
+import { deliverOrderEmails, mailConfigured } from './mail'
 
 const MODEL = process.env.NAU_AGENT_MODEL || 'claude-opus-5-5'
 const TOOLS = toolDefinitions().filter((t) => t.name !== 'open_page') // nobody is looking at a page
@@ -62,7 +63,7 @@ export async function runHeadless(workspaceId: string, task: string, source: 'ru
         failed = true
       } else {
         try {
-          const exec = executeTool(v.name as ToolName, v.input as Record<string, unknown>, { snapshot, actor: OPERATOR, canWrite: true, source })
+          const exec = executeTool(v.name as ToolName, v.input as Record<string, unknown>, { snapshot, actor: OPERATOR, canWrite: true, source, mail: mailConfigured() })
           if (exec.apply && !isEmpty(exec.apply)) {
             await save(exec.apply)
             snapshot = applyChangeSet(snapshot, exec.apply)
@@ -132,6 +133,8 @@ export async function runWorkspace(workspaceId: string, o: { event?: 'sync'; ask
         out.rules.push({ name: rule.name, report })
       }
   }
+  // Orders Operator sent inside its limits go out now
+  await deliverOrderEmails(workspaceId).catch((e) => console.error('[mail]', e))
   await admin().from('workspaces').update({ agent_ran_at: new Date().toISOString() }).eq('id', workspaceId)
   return out
 }

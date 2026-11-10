@@ -2,6 +2,7 @@ import { verifyUser } from './supabase-env'
 import { sha256 } from './crypto'
 import { admin, serverConfigured } from './db'
 import { clientIp, json, rateLimited } from './guard'
+import { tr } from '~/i18n'
 
 type Fail = { ok: false; res: Response }
 const RANK = { viewer: 0, member: 1, admin: 2, owner: 3 } as const
@@ -9,15 +10,15 @@ export type Role = keyof typeof RANK
 
 /** A signed-in person with at least `min` on the workspace. The role comes from the database, never from the request. */
 export async function requireMember(request: Request, workspaceId: unknown, min: Role = 'member'): Promise<{ ok: true; user: { id: string; email: string }; role: Role } | Fail> {
-  if (!serverConfigured()) return { ok: false, res: json({ error: 'This needs the server database. Connect Supabase (cloud or self-hosted) to use it.' }, 503) }
-  if (typeof workspaceId !== 'string' || !/^[0-9a-f-]{36}$/i.test(workspaceId)) return { ok: false, res: json({ error: 'Unknown workspace' }, 400) }
+  if (!serverConfigured()) return { ok: false, res: json({ error: tr('This needs the server database. Connect Supabase (cloud or self-hosted) to use it.') }, 503) }
+  if (typeof workspaceId !== 'string' || !/^[0-9a-f-]{36}$/i.test(workspaceId)) return { ok: false, res: json({ error: tr('Unknown workspace') }, 400) }
   const user = await verifyUser(request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null)
-  if (!user) return { ok: false, res: json({ error: 'Sign in first.' }, 401) }
-  if (rateLimited(`srv:u:${user.id}`, 120, 60_000)) return { ok: false, res: json({ error: 'Too many requests' }, 429) }
+  if (!user) return { ok: false, res: json({ error: tr('Sign in first.') }, 401) }
+  if (rateLimited(`srv:u:${user.id}`, 120, 60_000)) return { ok: false, res: json({ error: tr('Too many requests') }, 429) }
   const { data } = await admin().from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).eq('status', 'active').maybeSingle()
   const role = data?.role as Role | undefined
-  if (!role) return { ok: false, res: json({ error: 'Unknown workspace' }, 404) }
-  if (RANK[role] < RANK[min]) return { ok: false, res: json({ error: min === 'admin' ? 'Only owners and admins can do this.' : 'You have view-only access.' }, 403) }
+  if (!role) return { ok: false, res: json({ error: tr('Unknown workspace') }, 404) }
+  if (RANK[role] < RANK[min]) return { ok: false, res: json({ error: min === 'admin' ? tr('Only owners and admins can do this.') : tr('You have view-only access.') }, 403) }
   return { ok: true, user, role }
 }
 

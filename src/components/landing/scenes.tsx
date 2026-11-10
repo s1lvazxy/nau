@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BarcodeIcon, CheckIcon, FileTextIcon, PackageIcon, WarehouseIcon, WineIcon } from '@phosphor-icons/react'
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { gsap, ScrollTrigger, useGSAP } from './frame'
+import { tr } from '~/i18n'
 
 if (typeof window !== 'undefined') gsap.registerPlugin(MotionPathPlugin)
 
@@ -261,7 +262,7 @@ export function ForecastScene() {
         <g transform={`translate(${top[0]} ${top[1] - 8})`}>
           <rect x="-44" y="-13" width="88" height="26" rx="13" fill="#161616" stroke="rgb(255 120 60 / 0.5)" vectorEffect="non-scaling-stroke" />
           <text x="0" y="4.5" textAnchor="middle" className="fill-white font-sans text-[11.5px]">
-            13 jun · ×1,6
+            {tr('13 jun · ×1,6')}
           </text>
         </g>
       </g>
@@ -353,7 +354,7 @@ export function OrderScene() {
             <CheckIcon size={9} weight="bold" color="#000" />
           </g>
           <text x="30" y="18" className="fill-white font-sans text-[11.5px]">
-            Aprovada
+            {tr('Aprovada')}
           </text>
         </g>
       </g>
@@ -411,7 +412,7 @@ export function LotsScene() {
       <g transform={`translate(${iso(slots[5] + 28, beltY + 28, 96)[0]} ${iso(slots[5] + 28, beltY + 28, 96)[1]})`}>
         <rect x="-62" y="-14" width="124" height="28" rx="14" fill="#161616" stroke="rgb(245 165 36 / 0.5)" vectorEffect="non-scaling-stroke" />
         <text x="0" y="4.5" textAnchor="middle" className="fill-[#ffd27a] font-sans text-[11.5px]">
-          Sai primeiro · 2 dias
+          {tr('Sai primeiro · 2 dias')}
         </text>
       </g>
     </svg>
@@ -465,9 +466,9 @@ export function StoresScene() {
       ))}
       <path id="nau-stores-a" d={route} fill="none" stroke="rgb(255 140 80 / 0.55)" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
       <path id="nau-stores-b" d={route2} fill="none" stroke="rgb(255 255 255 / 0.25)" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
-      <Building x={60} y={-90} w={52} d={44} h={46} label="Bonfim" lit />
-      <Building x={-140} y={-40} w={80} d={64} h={40} label="Armazém" />
-      <Building x={40} y={40} w={52} d={44} h={46} label="Príncipe Real" lit />
+      <Building x={60} y={-90} w={52} d={44} h={46} label={tr('Bonfim')} lit />
+      <Building x={-140} y={-40} w={80} d={64} h={40} label={tr('Armazém')} />
+      <Building x={40} y={40} w={52} d={44} h={46} label={tr('Príncipe Real')} lit />
       <circle data-van r="4.5" fill="#ffd9bd" opacity="0" style={{ filter: 'drop-shadow(0 0 6px rgb(255 91 31 / 1))' }} />
       <circle data-van2 r="4" fill="#fff" opacity="0" style={{ filter: 'drop-shadow(0 0 5px rgb(255 255 255 / 0.8))' }} />
     </svg>

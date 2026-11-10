@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { cn } from '~/lib/utils'
 import { Container, Heading, Rule, Spot } from './frame'
 import { CountScene, ForecastScene, LotsScene, OrderScene, ReceiveScene, SceneDefs, StoresScene } from './scenes'
+import { tr } from '~/i18n'
 
 function Feature({ title, quiet, body, scene, className }: { title: string; quiet: string; body: string; scene: ReactNode; className?: string }) {
   return (
@@ -28,17 +29,17 @@ export function Bento() {
     <section id="product" aria-labelledby="product-title" className="scroll-mt-20">
       <SceneDefs />
       <Container className="pt-28 pb-14 md:pt-36 md:pb-16">
-        <Heading id="product-title" title="O trabalho do armazém," accent="de ponta a ponta.">
-          Receber, contar, prever e encomendar — com lotes, validades e várias lojas pelo meio.
+        <Heading id="product-title" title={tr('O trabalho do armazém,')} accent="de ponta a ponta.">
+          {tr('Receber, contar, prever e encomendar — com lotes, validades e várias lojas pelo meio.')}
         </Heading>
       </Container>
       <Container className="grid gap-3 pb-28 md:pb-36 lg:grid-cols-12">
-        <Feature className="lg:col-span-7" title="Recebe por fotografia." quiet="As linhas entram sozinhas." body="Fotografas a fatura. As linhas ligam-se à encomenda, os preços são comparados com a última compra e os lotes ficam registados." scene={<ReceiveScene />} />
-        <Feature className="lg:col-span-5" title="Conta com o telemóvel." quiet="Sem papel." body="Contagens cegas, código a código, com a diferença em unidades e em euros." scene={<CountScene />} />
-        <Feature className="lg:col-span-5" title="Prevê com o calendário." quiet="O de cá." body="Procura por dia da semana, feriados e Santo António — para cada artigo, em cada loja." scene={<ForecastScene />} />
-        <Feature className="lg:col-span-7" title="Encomenda num toque." quiet="Segue por email." body="As propostas chegam agrupadas por fornecedor, com mínimos cumpridos. Aprovas e a encomenda segue em português." scene={<OrderScene />} />
-        <Feature className="lg:col-span-7" title="Lotes e validades," quiet="por ordem." body="Primeiro a expirar, primeiro a sair, em todas as lojas. Antes de expirar, a remarcação já está preparada." scene={<LotsScene />} />
-        <Feature className={cn('lg:col-span-5')} title="Várias lojas," quiet="um só stock." body="Lojas, armazém e carrinha, com cada transferência registada de ponta a ponta." scene={<StoresScene />} />
+        <Feature className="lg:col-span-7" title={tr('Recebe por fotografia.')} quiet={tr('As linhas entram sozinhas.')} body={tr('Fotografas a fatura. As linhas ligam-se à encomenda, os preços são comparados com a última compra e os lotes ficam registados.')} scene={<ReceiveScene />} />
+        <Feature className="lg:col-span-5" title={tr('Conta com o telemóvel.')} quiet={tr('Sem papel.')} body={tr('Contagens cegas, código a código, com a diferença em unidades e em euros.')} scene={<CountScene />} />
+        <Feature className="lg:col-span-5" title={tr('Prevê com o calendário.')} quiet={tr('O de cá.')} body={tr('Procura por dia da semana, feriados e Santo António — para cada artigo, em cada loja.')} scene={<ForecastScene />} />
+        <Feature className="lg:col-span-7" title={tr('Encomenda num toque.')} quiet={tr('Segue por email.')} body={tr('As propostas chegam agrupadas por fornecedor, com mínimos cumpridos. Aprovas e a encomenda segue em português.')} scene={<OrderScene />} />
+        <Feature className="lg:col-span-7" title={tr('Lotes e validades,')} quiet={tr('por ordem.')} body={tr('Primeiro a expirar, primeiro a sair, em todas as lojas. Antes de expirar, a remarcação já está preparada.')} scene={<LotsScene />} />
+        <Feature className={cn('lg:col-span-5')} title={tr('Várias lojas,')} quiet={tr('um só stock.')} body={tr('Lojas, armazém e carrinha, com cada transferência registada de ponta a ponta.')} scene={<StoresScene />} />
       </Container>
       <Rule />
     </section>

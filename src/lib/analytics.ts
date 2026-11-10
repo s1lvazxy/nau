@@ -2,17 +2,18 @@ import type { Batch, Item, Movement, Proposal, PurchaseOrder, Snapshot, Supplier
 import { addDays, isoDay, daysBetween, eur, qty as fmtQty } from './format'
 import { holidayOn } from './pt'
 import { hashString, indexBy, round, sum } from './utils'
+import { tr } from '~/i18n'
 
 export type StockStatus = 'out' | 'critical' | 'low' | 'healthy' | 'over' | 'dead' | 'idle'
 
 export const STATUS_META: Record<StockStatus, { label: string; tone: 'bad' | 'warn' | 'ok' | 'info' | 'muted' | 'violet' }> = {
-  out: { label: 'Out of stock', tone: 'bad' },
-  critical: { label: 'Critical', tone: 'bad' },
-  low: { label: 'Reorder', tone: 'warn' },
-  healthy: { label: 'Healthy', tone: 'ok' },
-  over: { label: 'Overstock', tone: 'info' },
-  dead: { label: 'Not moving', tone: 'violet' },
-  idle: { label: 'Inactive', tone: 'muted' },
+  out: { label: tr('Out of stock'), tone: 'bad' },
+  critical: { label: tr('Critical'), tone: 'bad' },
+  low: { label: tr('Reorder'), tone: 'warn' },
+  healthy: { label: tr('Healthy'), tone: 'ok' },
+  over: { label: tr('Overstock'), tone: 'info' },
+  dead: { label: tr('Not moving'), tone: 'violet' },
+  idle: { label: tr('Inactive'), tone: 'muted' },
 }
 
 export interface ItemStats {
@@ -409,24 +410,24 @@ export function generateProposals(s: Snapshot): Omit<Proposal, 'id' | 'createdAt
           lines.push({ itemId: ex.item.id, qty: q, unitCost: ex.item.cost })
           total += q * ex.item.cost
         }
-        if (total >= sup.minOrderValue) rationale.push(`Topped up with items due soon to reach ${sup.name}’s ${eur(sup.minOrderValue, { decimals: 0 })} minimum.`)
-        else rationale.push(`Below ${sup.name}’s ${eur(sup.minOrderValue, { decimals: 0 })} minimum — consider waiting a day or two.`)
+        if (total >= sup.minOrderValue) rationale.push(tr('Topped up with items due soon to reach {0}’s {1} minimum.', sup.name, eur(sup.minOrderValue, { decimals: 0 })))
+        else rationale.push(tr('Below {0}’s {1} minimum — consider waiting a day or two.', sup.name, eur(sup.minOrderValue, { decimals: 0 })))
       }
       lines = lines.map((l) => ({ ...l, unitCost: round(l.unitCost) }))
       const critical = list.filter((x) => x.status === 'critical' || x.status === 'out')
       const names = list.slice(0, 2).map((x) => x.item.name)
       rationale.unshift(
         critical.length
-          ? `${critical.length} item${critical.length > 1 ? 's' : ''} will run out before a new delivery could arrive (${sup.leadTimeDays}-day lead time).`
-          : `${list.length} item${list.length > 1 ? 's' : ''} crossed the reorder point.`,
+          ? (critical.length > 1 ? tr('{0} items will run out before a new delivery could arrive ({1}-day lead time).', critical.length, sup.leadTimeDays) : tr('{0} item will run out before a new delivery could arrive ({1}-day lead time).', critical.length, sup.leadTimeDays))
+          : (list.length > 1 ? tr('{0} items crossed the reorder point.', list.length) : tr('{0} item crossed the reorder point.', list.length)),
       )
       const fastest = [...list].sort((a, b) => a.cover - b.cover)[0]
       if (fastest && Number.isFinite(fastest.cover))
-        rationale.push(`${fastest.item.name} has ${fastest.cover < 1 ? 'less than a day' : Math.floor(fastest.cover) === 1 ? 'one day' : `${Math.floor(fastest.cover)} days`} of cover at the current pace.`)
+        rationale.push(tr('{0} has {1} of cover at the current pace.', fastest.item.name, fastest.cover < 1 ? tr('less than a day') : Math.floor(fastest.cover) === 1 ? tr('one day') : tr('{0} days', Math.floor(fastest.cover))))
       out.push({
         kind: 'reorder',
-        title: `Reorder from ${sup.name}`,
-        summary: `${lines.length} line${lines.length > 1 ? 's' : ''} · ${names.join(', ')}${list.length > 2 ? ` +${list.length - 2}` : ''}`,
+        title: tr('Reorder from {0}', sup.name),
+        summary: (lines.length > 1 ? tr('{0} lines · {1}{2}', lines.length, names.join(', '), list.length > 2 ? ` +${list.length - 2}` : '') : tr('{0} line · {1}{2}', lines.length, names.join(', '), list.length > 2 ? ` +${list.length - 2}` : '')),
         rationale,
         impactEur: round(total),
         payload: { supplierId: supId, locationId: s.locations.find((l) => l.isDefault)?.id ?? s.locations[0]?.id, lines },
@@ -458,12 +459,12 @@ export function generateProposals(s: Snapshot): Omit<Proposal, 'id' | 'createdAt
         if (moveQty <= 0 || moveQty * st.item.cost < 15) continue
         transfers.push({
           kind: 'transfer',
-          title: `Move ${fmtQty(moveQty, st.item.unit)} ${st.item.name}`,
+          title: tr('Move {0} {1}', fmtQty(moveQty, st.item.unit), st.item.name),
           summary: `${locations[long.id]?.name} → ${locations[short.id]?.name}`,
           rationale: [
-            `${locations[short.id]?.name} has ${short.cover < 1 ? 'under a day' : Math.floor(short.cover) === 1 ? 'one day' : `${Math.floor(short.cover)} days`} of cover.`,
-            `${locations[long.id]?.name} holds ${Number.isFinite(long.cover) ? `${Math.floor(long.cover)} days` : 'stock with no local demand'}.`,
-            `A transfer is faster and cheaper than a new order.`,
+            tr('{0} has {1} of cover.', locations[short.id]?.name, short.cover < 1 ? tr('under a day') : Math.floor(short.cover) === 1 ? tr('one day') : tr('{0} days', Math.floor(short.cover))),
+            tr('{0} holds {1}.', locations[long.id]?.name, Number.isFinite(long.cover) ? tr('{0} days', Math.floor(long.cover)) : tr('stock with no local demand')),
+            tr('A transfer is faster and cheaper than a new order.'),
           ],
           impactEur: round(moveQty * st.item.cost),
           payload: { itemId: st.item.id, from: long.id, to: short.id, qty: moveQty },
@@ -494,14 +495,14 @@ export function generateProposals(s: Snapshot): Omit<Proposal, 'id' | 'createdAt
       if (atRisk < 1 || atRisk * it.cost < 8) continue
       const first = lots[0]
       const discount = first.days <= 1 ? 40 : first.days <= 3 ? 30 : 20
-      const when = first.days <= 0 ? 'today' : first.days === 1 ? 'tomorrow' : `in ${first.days} days`
+      const when = first.days <= 0 ? tr('today') : first.days === 1 ? tr('tomorrow') : tr('in {0} days', first.days)
       out.push({
         kind: 'markdown',
-        title: `Clear ${fmtQty(Math.ceil(atRisk), it.unit)} ${it.name} before it expires`,
-        summary: `${lots.length > 1 ? `${lots.length} lots` : `Lot ${first.batch.code}`} · first expires ${when} · ${discount}% off`,
+        title: tr('Clear {0} {1} before it expires', fmtQty(Math.ceil(atRisk), it.unit), it.name),
+        summary: tr('{0} · first expires {1} · {2}% off', lots.length > 1 ? tr('{0} lots', lots.length) : tr('Lot {0}', first.batch.code), when, discount),
         rationale: [
-          `${fmtQty(round(lots.reduce((a, x) => a + x.batch.qty, 0), 2), it.unit)} expire within ${s.workspace.settings.expiryWarnDays} days; normal sales will move about ${fmtQty(Math.floor(sold), it.unit)}.`,
-          `A ${discount}% markdown recovers ${eur(atRisk * it.price * (1 - discount / 100), { decimals: 0 })} instead of writing it off.`,
+          tr('{0} expire within {1} days; normal sales will move about {2}.', fmtQty(round(lots.reduce((a, x) => a + x.batch.qty, 0), 2), it.unit), s.workspace.settings.expiryWarnDays, fmtQty(Math.floor(sold), it.unit)),
+          tr('A {0}% markdown recovers {1} instead of writing it off.', discount, eur(atRisk * it.price * (1 - discount / 100), { decimals: 0 })),
         ],
         impactEur: round(atRisk * it.cost),
         payload: { itemId, batchIds: lots.map((x) => x.batch.id), discount, qty: Math.ceil(atRisk) },
@@ -518,14 +519,14 @@ export function generateProposals(s: Snapshot): Omit<Proposal, 'id' | 'createdAt
       const total = sum(dead.map((x) => x.value))
       out.push({
         kind: 'deadstock',
-        title: `Free ${eur(total, { decimals: 0 })} tied up in stock that isn’t moving`,
+        title: tr('Free {0} tied up in stock that isn’t moving', eur(total, { decimals: 0 })),
         summary: dead
           .slice(0, 3)
           .map((x) => x.item.name)
           .join(', ') + (dead.length > 3 ? ` +${dead.length - 3}` : ''),
         rationale: [
-          `${dead.length} item${dead.length > 1 ? 's have' : ' has'} had no sales in ${s.workspace.settings.deadStockDays}+ days.`,
-          `Suggested: bundle with fast movers, a 25% clearance, or return to supplier where terms allow.`,
+          (dead.length > 1 ? tr('{0} items have had no sales in {1}+ days.', dead.length, s.workspace.settings.deadStockDays) : tr('{0} item has had no sales in {1}+ days.', dead.length, s.workspace.settings.deadStockDays)),
+          tr('Suggested: bundle with fast movers, a 25% clearance, or return to supplier where terms allow.'),
         ],
         impactEur: round(total),
         payload: { itemIds: dead.map((x) => x.item.id), discount: 25 },
@@ -545,14 +546,14 @@ export function generateProposals(s: Snapshot): Omit<Proposal, 'id' | 'createdAt
     if (pick.length >= 4) {
       out.push({
         kind: 'count',
-        title: `Spot-count ${pick.length} high-value items`,
+        title: tr('Spot-count {0} high-value items', pick.length),
         summary: pick
           .slice(0, 3)
           .map((x) => x.item.name)
           .join(', ') + ` +${pick.length - 3}`,
         rationale: [
-          `These A-items drive most of your revenue and haven’t been counted in 30 days.`,
-          `A 10-minute count keeps forecasts honest.`,
+          tr('These A-items drive most of your revenue and haven’t been counted in 30 days.'),
+          tr('A 10-minute count keeps forecasts honest.'),
         ],
         impactEur: round(sum(pick.map((x) => x.value))),
         payload: { itemIds: pick.map((x) => x.item.id), locationId: s.locations.find((l) => l.isDefault)?.id ?? s.locations[0]?.id },
@@ -573,11 +574,11 @@ export function generateProposals(s: Snapshot): Omit<Proposal, 'id' | 'createdAt
       const newPrice = round((st.lastReceiptCost / (1 - oldMargin)) * (1 + st.item.vatRate / 100), 2)
       out.push({
         kind: 'price',
-        title: `${st.item.name}: cost up ${Math.round(change * 100)}%`,
-        summary: `Keep your margin at ${eur(newPrice)} (now ${eur(st.item.price)})`,
+        title: tr('{0}: cost up {1}%', st.item.name, Math.round(change * 100)),
+        summary: tr('Keep your margin at {0} (now {1})', eur(newPrice), eur(st.item.price)),
         rationale: [
-          `Last delivery came in at ${eur(st.lastReceiptCost)} vs ${eur(st.prevReceiptCost)} before.`,
-          `At the current price your margin drops from ${Math.round(oldMargin * 100)}% to ${Math.round(((net - st.lastReceiptCost) / net) * 100)}%.`,
+          tr('Last delivery came in at {0} vs {1} before.', eur(st.lastReceiptCost), eur(st.prevReceiptCost)),
+          tr('At the current price your margin drops from {0}% to {1}%.', Math.round(oldMargin * 100), Math.round(((net - st.lastReceiptCost) / net) * 100)),
         ],
         impactEur: round((st.lastReceiptCost - st.prevReceiptCost) * st.sold30),
         payload: { itemId: st.item.id, newPrice },
@@ -600,19 +601,19 @@ export function morningBrief(s: Snapshot) {
   const growth = k.prev7.revenue > 0 ? k.d7.revenue / k.prev7.revenue - 1 : 0
   lines.push({
     tone: growth >= 0 ? 'ok' : 'warn',
-    text: `Sales this week ${eur(k.d7.revenue, { decimals: 0 })}, ${growth >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(growth * 100))}% on last week.`,
+    text: (growth >= 0 ? tr('Sales this week {0}, up {1}% on last week.', eur(k.d7.revenue, { decimals: 0 }), Math.abs(Math.round(growth * 100))) : tr('Sales this week {0}, down {1}% on last week.', eur(k.d7.revenue, { decimals: 0 }), Math.abs(Math.round(growth * 100)))),
   })
   const outs = stats.filter((x) => x.status === 'out')
-  if (outs.length) lines.push({ tone: 'bad', text: `${outs.length} item${outs.length > 1 ? 's are' : ' is'} out of stock — ${outs.slice(0, 2).map((x) => x.item.name).join(', ')}${outs.length > 2 ? '…' : '.'}` })
+  if (outs.length) lines.push({ tone: 'bad', text: (outs.length > 1 ? outs.length > 2 ? tr('{0} items are out of stock — {1}…', outs.length, outs.slice(0, 2).map((x) => x.item.name).join(', ')) : tr('{0} items are out of stock — {1}.', outs.length, outs.slice(0, 2).map((x) => x.item.name).join(', ')) : outs.length > 2 ? tr('{0} item is out of stock — {1}…', outs.length, outs.slice(0, 2).map((x) => x.item.name).join(', ')) : tr('{0} item is out of stock — {1}.', outs.length, outs.slice(0, 2).map((x) => x.item.name).join(', '))) })
   const arriving = s.orders.filter((p) => (p.status === 'sent' || p.status === 'partial') && p.expectedOn?.slice(0, 10) === today)
   if (arriving.length) {
     const sup = indexBy(s.suppliers, (x) => x.id)
-    lines.push({ tone: 'info', text: `Deliveries due today: ${arriving.map((p) => sup[p.supplierId]?.name).join(', ')}.` })
+    lines.push({ tone: 'info', text: tr('Deliveries due today: {0}.', arriving.map((p) => sup[p.supplierId]?.name).join(', ')) })
   }
   const exp = expiringBatches(s, 3)
-  if (exp.length) lines.push({ tone: 'warn', text: `${exp.length} lot${exp.length > 1 ? 's' : ''} expire within 3 days.` })
-  if (k.pending) lines.push({ tone: 'info', text: `${k.pending} suggestion${k.pending > 1 ? 's' : ''} waiting for your approval.` })
-  if (k.deadValue > 0) lines.push({ tone: 'warn', text: `${eur(k.deadValue, { decimals: 0 })} sits in items that haven’t sold in ${s.workspace.settings.deadStockDays} days.` })
+  if (exp.length) lines.push({ tone: 'warn', text: (exp.length > 1 ? tr('{0} lots expire within 3 days.', exp.length) : tr('{0} lot expire within 3 days.', exp.length)) })
+  if (k.pending) lines.push({ tone: 'info', text: (k.pending > 1 ? tr('{0} suggestions waiting for your approval.', k.pending) : tr('{0} suggestion waiting for your approval.', k.pending)) })
+  if (k.deadValue > 0) lines.push({ tone: 'warn', text: tr('{0} sits in items that haven’t sold in {1} days.', eur(k.deadValue, { decimals: 0 }), s.workspace.settings.deadStockDays) })
   return { health: k.health, lines }
 }
 

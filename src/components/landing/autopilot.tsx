@@ -1,18 +1,19 @@
 import { useRef, useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import { ArrowRightIcon, CheckIcon } from '@phosphor-icons/react'
 import { cn } from '~/lib/utils'
 import { gsap, useGSAP, useReducedMotion } from './frame'
+import { msg, tr } from '~/i18n'
+import { LANDING_ONLY, href } from '~/lib/site'
 
 /* One autopilot run, driven by the scroll: six checks, each one sending what it found into the count. */
 
 const CHECKS = [
-  { name: 'Reposição', found: '3 encomendas · 1 940 €', adds: 3 },
-  { name: 'Validades', found: '8 lotes expiram em 3 dias', adds: 4 },
-  { name: 'Preços de custo', found: '2 subiram mais de 5%', adds: 2 },
-  { name: 'Entre lojas', found: '20 cápsulas para o Príncipe Real', adds: 1 },
-  { name: 'Stock parado', found: '372 € sem vendas há 45 dias', adds: 2 },
-  { name: 'Contagens', found: '8 artigos de valor por confirmar', adds: 2 },
+  { name: msg('Reposição'), found: msg('3 encomendas · 1 940 €'), adds: 3 },
+  { name: msg('Validades'), found: msg('8 lotes expiram em 3 dias'), adds: 4 },
+  { name: msg('Preços de custo'), found: msg('2 subiram mais de 5%'), adds: 2 },
+  { name: msg('Entre lojas'), found: msg('20 cápsulas para o Príncipe Real'), adds: 1 },
+  { name: msg('Stock parado'), found: msg('372 € sem vendas há 45 dias'), adds: 2 },
+  { name: msg('Contagens'), found: msg('8 artigos de valor por confirmar'), adds: 2 },
 ]
 const TOTAL = CHECKS.reduce((a, c) => a + c.adds, 0)
 const CUM = CHECKS.map((_, i) => CHECKS.slice(0, i + 1).reduce((a, c) => a + c.adds, 0))
@@ -46,8 +47,8 @@ function Check({ i, state, side }: { i: number; state: State; side: 'left' | 'ri
   const c = CHECKS[i]
   const text = (
     <span className={cn('min-w-0 flex-1', side === 'left' ? 'text-right' : 'text-left')}>
-      <span className={cn('block text-[clamp(1.05rem,1.55vw,1.4rem)] leading-tight font-medium tracking-[-0.02em] transition-colors duration-500', state === 'idle' ? 'text-white/30' : 'text-white')}>{c.name}</span>
-      <span className={cn('mt-1 block h-5 truncate text-[13.5px] transition-[opacity,color] duration-500', state === 'done' ? 'text-white/55 opacity-100' : state === 'running' ? 'text-[#ffb48a] opacity-100' : 'opacity-0')}>{state === 'running' ? 'a verificar…' : c.found}</span>
+      <span className={cn('block text-[clamp(1.05rem,1.55vw,1.4rem)] leading-tight font-medium tracking-[-0.02em] transition-colors duration-500', state === 'idle' ? 'text-white/30' : 'text-white')}>{tr(c.name)}</span>
+      <span className={cn('mt-1 block h-5 truncate text-[13.5px] transition-[opacity,color] duration-500', state === 'done' ? 'text-white/55 opacity-100' : state === 'running' ? 'text-[#ffb48a] opacity-100' : 'opacity-0')}>{state === 'running' ? tr('a verificar…') : tr(c.found)}</span>
     </span>
   )
   return (
@@ -155,7 +156,7 @@ export function AutopilotSection() {
           <div data-glow aria-hidden className="pointer-events-none absolute top-1/2 left-1/2 -z-[1] aspect-square w-[min(1100px,120vw)] -translate-x-1/2 -translate-y-[42%] rounded-full bg-[radial-gradient(closest-side,rgb(255_91_31/0.2),rgb(255_91_31/0.05)_55%,transparent)] opacity-0" />
 
           <h2 id="pilot-title" data-lines className="text-center text-[clamp(1.6rem,3vw,2.75rem)] leading-[1.05] font-medium tracking-[-0.03em] text-white">
-            De hora a hora, <span className="text-white/38">sem pedir.</span>
+            {tr('De hora a hora,')} <span className="text-white/38">{tr('sem pedir.')}</span>
           </h2>
 
           {/* Wide: the count in the middle, three checks feeding it from each side */}
@@ -184,8 +185,8 @@ export function AutopilotSection() {
                 return (
                   <li key={c.name} className="relative flex items-center gap-3 py-[clamp(8px,1.5vh,13px)]">
                     <Glyph state={st} />
-                    <span className={cn('text-[15.5px] font-medium tracking-[-0.01em] transition-colors duration-500', st === 'idle' ? 'text-white/30' : 'text-white')}>{c.name}</span>
-                    <span className={cn('ml-auto min-w-0 truncate text-[12.5px] transition-opacity duration-500', st === 'done' ? 'text-white/50 opacity-100' : st === 'running' ? 'text-[#ffb48a] opacity-100' : 'opacity-0')}>{st === 'running' ? 'a verificar…' : c.found}</span>
+                    <span className={cn('text-[15.5px] font-medium tracking-[-0.01em] transition-colors duration-500', st === 'idle' ? 'text-white/30' : 'text-white')}>{tr(c.name)}</span>
+                    <span className={cn('ml-auto min-w-0 truncate text-[12.5px] transition-opacity duration-500', st === 'done' ? 'text-white/50 opacity-100' : st === 'running' ? 'text-[#ffb48a] opacity-100' : 'opacity-0')}>{st === 'running' ? tr('a verificar…') : tr(c.found)}</span>
                     <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-white/[0.08]">
                       <span data-wire className="absolute inset-0 origin-left bg-gradient-to-r from-[#ff5b1f]/0 to-[#ffb48a]" style={{ transform: 'scaleX(0)' }} />
                     </span>
@@ -197,12 +198,12 @@ export function AutopilotSection() {
 
           <div className="mt-[clamp(10px,3vh,34px)] flex flex-col items-center gap-4">
             <p className="text-center text-[15px] text-white/55">
-              {count === 1 ? 'proposta pronta' : 'propostas prontas'} para aprovares, <span className="text-white/80">cada uma com a sua razão</span>.
+              {(count === 1 ? tr('proposta pronta para aprovares,') : tr('propostas prontas para aprovares,'))} <span className="text-white/80">{tr('cada uma com a sua razão')}</span>.
             </p>
-            <Link to="/demo" tabIndex={finished ? 0 : -1} aria-hidden={!finished} className={cn('press group inline-flex h-10 items-center gap-2 rounded-full bg-white/[0.05] pr-4 pl-5 text-[14px] font-medium text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.14)] transition-[opacity,transform,background-color] duration-500 ease-[var(--ease-out)] hover:bg-white/[0.09]', finished ? 'opacity-100' : 'pointer-events-none translate-y-1.5 opacity-0')}>
-              Ver as {TOTAL} na demo
+            <a href={LANDING_ONLY ? '#install' : href('/demo')} tabIndex={finished ? 0 : -1} aria-hidden={!finished} className={cn('press group inline-flex h-10 items-center gap-2 rounded-full bg-white/[0.05] pr-4 pl-5 text-[14px] font-medium text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.14)] transition-[opacity,transform,background-color] duration-500 ease-[var(--ease-out)] hover:bg-white/[0.09]', finished ? 'opacity-100' : 'pointer-events-none translate-y-1.5 opacity-0')}>
+              {LANDING_ONLY ? tr('Instala para ver as {0}', TOTAL) : tr('Ver as {0} na demo', TOTAL)}
               <ArrowRightIcon size={13} weight="bold" className="transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import type { Region } from './types'
+import { tr } from '~/i18n'
 
 /** Validates a Portuguese NIF (Número de Identificação Fiscal) using the mod-11 check digit. */
 export function isValidNIF(raw: string | null | undefined): boolean {
@@ -15,13 +16,13 @@ export function isValidNIF(raw: string | null | undefined): boolean {
 }
 
 export function nifKind(nif: string): string {
-  if (/^[123]/.test(nif)) return 'Individual'
+  if (/^[123]/.test(nif)) return tr('Individual')
   if (/^45/.test(nif)) return 'Non-resident individual'
-  if (/^5/.test(nif)) return 'Company'
-  if (/^6/.test(nif)) return 'Public body'
-  if (/^8/.test(nif)) return 'Sole trader'
-  if (/^9/.test(nif)) return 'Other entity'
-  return 'Entity'
+  if (/^5/.test(nif)) return tr('Company')
+  if (/^6/.test(nif)) return tr('Public body')
+  if (/^8/.test(nif)) return tr('Sole trader')
+  if (/^9/.test(nif)) return tr('Other entity')
+  return tr('Entity')
 }
 
 export function formatNIF(nif: string) {
@@ -47,17 +48,17 @@ export const VAT_RATES: Record<Region, { normal: number; intermediate: number; r
 export function vatOptions(region: Region) {
   const r = VAT_RATES[region]
   return [
-    { value: r.normal, label: `${r.normal}% · Normal` },
-    { value: r.intermediate, label: `${r.intermediate}% · Intermediate` },
-    { value: r.reduced, label: `${r.reduced}% · Reduced` },
-    { value: 0, label: '0% · Exempt' },
+    { value: r.normal, label: tr('{0}% · Normal', r.normal) },
+    { value: r.intermediate, label: tr('{0}% · Intermediate', r.intermediate) },
+    { value: r.reduced, label: tr('{0}% · Reduced', r.reduced) },
+    { value: 0, label: tr('0% · Exempt') },
   ]
 }
 
 export const REGION_LABEL: Record<Region, string> = {
-  continente: 'Mainland Portugal',
-  madeira: 'Madeira',
-  acores: 'Azores',
+  continente: tr('Mainland Portugal'),
+  madeira: tr('Madeira'),
+  acores: tr('Azores'),
 }
 
 function easter(year: number) {
@@ -93,24 +94,24 @@ export function holidays(year: number): Holiday[] {
   const e = easter(year)
   const fixed = (m: number, d: number) => key(new Date(Date.UTC(year, m - 1, d)))
   return [
-    { date: fixed(1, 1), name: 'New Year’s Day', scope: 'national', lift: 0.6 },
-    { date: key(shift(e, -47)), name: 'Carnival', scope: 'national', lift: 1.1 },
-    { date: key(shift(e, -2)), name: 'Good Friday', scope: 'national', lift: 0.8 },
-    { date: key(e), name: 'Easter Sunday', scope: 'national', lift: 1.3 },
-    { date: fixed(4, 25), name: 'Freedom Day', scope: 'national', lift: 0.9 },
-    { date: fixed(5, 1), name: 'Labour Day', scope: 'national', lift: 0.8 },
-    { date: key(shift(e, 60)), name: 'Corpus Christi', scope: 'national', lift: 0.9 },
-    { date: fixed(6, 10), name: 'Portugal Day', scope: 'national', lift: 1.0 },
-    { date: fixed(6, 13), name: 'Santo António', scope: 'lisboa', lift: 1.6 },
-    { date: fixed(6, 24), name: 'São João', scope: 'porto', lift: 1.6 },
-    { date: fixed(8, 15), name: 'Assumption', scope: 'national', lift: 1.0 },
-    { date: fixed(10, 5), name: 'Republic Day', scope: 'national', lift: 0.9 },
-    { date: fixed(11, 1), name: 'All Saints’ Day', scope: 'national', lift: 0.9 },
-    { date: fixed(12, 1), name: 'Restoration of Independence', scope: 'national', lift: 1.1 },
-    { date: fixed(12, 8), name: 'Immaculate Conception', scope: 'national', lift: 1.1 },
-    { date: fixed(12, 24), name: 'Christmas Eve', scope: 'national', lift: 1.8 },
-    { date: fixed(12, 25), name: 'Christmas Day', scope: 'national', lift: 0.4 },
-    { date: fixed(12, 31), name: 'New Year’s Eve', scope: 'national', lift: 1.5 },
+    { date: fixed(1, 1), name: tr('New Year’s Day'), scope: 'national', lift: 0.6 },
+    { date: key(shift(e, -47)), name: tr('Carnival'), scope: 'national', lift: 1.1 },
+    { date: key(shift(e, -2)), name: tr('Good Friday'), scope: 'national', lift: 0.8 },
+    { date: key(e), name: tr('Easter Sunday'), scope: 'national', lift: 1.3 },
+    { date: fixed(4, 25), name: tr('Freedom Day'), scope: 'national', lift: 0.9 },
+    { date: fixed(5, 1), name: tr('Labour Day'), scope: 'national', lift: 0.8 },
+    { date: key(shift(e, 60)), name: tr('Corpus Christi'), scope: 'national', lift: 0.9 },
+    { date: fixed(6, 10), name: tr('Portugal Day'), scope: 'national', lift: 1.0 },
+    { date: fixed(6, 13), name: tr('Santo António'), scope: 'lisboa', lift: 1.6 },
+    { date: fixed(6, 24), name: tr('São João'), scope: 'porto', lift: 1.6 },
+    { date: fixed(8, 15), name: tr('Assumption'), scope: 'national', lift: 1.0 },
+    { date: fixed(10, 5), name: tr('Republic Day'), scope: 'national', lift: 0.9 },
+    { date: fixed(11, 1), name: tr('All Saints’ Day'), scope: 'national', lift: 0.9 },
+    { date: fixed(12, 1), name: tr('Restoration of Independence'), scope: 'national', lift: 1.1 },
+    { date: fixed(12, 8), name: tr('Immaculate Conception'), scope: 'national', lift: 1.1 },
+    { date: fixed(12, 24), name: tr('Christmas Eve'), scope: 'national', lift: 1.8 },
+    { date: fixed(12, 25), name: tr('Christmas Day'), scope: 'national', lift: 0.4 },
+    { date: fixed(12, 31), name: tr('New Year’s Eve'), scope: 'national', lift: 1.5 },
   ]
 }
 
@@ -153,7 +154,7 @@ export function atInventoryCSV(
 /** Parses SAF-T (PT) sales invoices into per-product sold quantities. Runs in the browser with DOMParser. */
 export function parseSAFT(xml: string): { invoices: number; lines: { code: string; description: string; qty: number; date: string; unitPrice: number }[]; period?: string; company?: string } {
   const doc = new DOMParser().parseFromString(xml, 'application/xml')
-  if (doc.querySelector('parsererror')) throw new Error('This file is not valid XML.')
+  if (doc.querySelector('parsererror')) throw new Error(tr('This file is not valid XML.'))
   const byLocal = (el: Element | Document, name: string) => Array.from(el.getElementsByTagNameNS('*', name))
   const text = (el: Element, name: string) => byLocal(el, name)[0]?.textContent?.trim() ?? ''
   const header = byLocal(doc, 'Header')[0]

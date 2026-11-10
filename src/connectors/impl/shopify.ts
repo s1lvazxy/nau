@@ -2,17 +2,18 @@ import type { ExtDocument, ExtProduct, IngestBatch } from '~/ingest/types'
 import { hmac, safeEqual } from '~/server/crypto'
 import { ConnectorError, request } from '../http'
 import { catalogDue, num, since, type Connector, type Ctx } from '../types'
+import { tr } from '~/i18n'
 
 const VERSION = '2026-01'
 const shopOf = (ctx: Ctx) => {
   const shop = ctx.creds.shop?.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
-  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop ?? '')) throw new ConnectorError('Use the shop’s .myshopify.com address.')
+  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop ?? '')) throw new ConnectorError(tr('Use the shop’s .myshopify.com address.'))
   return shop
 }
 
 async function gql<T>(ctx: Ctx, query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const r = await request<{ data?: T; errors?: { message: string }[] }>(`https://${shopOf(ctx)}/admin/api/${VERSION}/graphql.json`, { headers: { 'x-shopify-access-token': ctx.creds.accessToken }, json: { query, variables } })
-  if (r.errors?.length) throw new ConnectorError(`Shopify: ${r.errors[0].message}`)
+  if (r.errors?.length) throw new ConnectorError(tr('Shopify: {0}', r.errors[0].message))
   return r.data as T
 }
 
@@ -90,7 +91,7 @@ export const shopify: Connector = {
 
   async pushStock(ctx, levels) {
     const loc = ctx.creds.locationId || (await gql<any>(ctx, `{ locations(first: 1, query: "active:true") { nodes { id } } }`)).locations.nodes[0]?.id
-    if (!loc) throw new ConnectorError('The shop has no active location to hold stock.')
+    if (!loc) throw new ConnectorError(tr('The shop has no active location to hold stock.'))
     let updated = 0
     const failed: string[] = []
     for (let i = 0; i < levels.length; i += 50) {
@@ -104,7 +105,7 @@ export const shopify: Connector = {
       const key = hmac('nau-shopify-stock', JSON.stringify(quantities)).slice(0, 32)
       const r: any = await gql(ctx, `mutation($input: InventorySetQuantitiesInput!, $key: String!) { inventorySetQuantities(input: $input) @idempotent(key: $key) { userErrors { field message } } }`, { input: { name: 'available', reason: 'correction', referenceDocumentUri: 'nau://stock-sync', quantities }, key })
       const errors = r.inventorySetQuantities?.userErrors ?? []
-      if (errors.length) throw new ConnectorError(`Shopify refused the stock update: ${errors[0].message}`)
+      if (errors.length) throw new ConnectorError(tr('Shopify refused the stock update: {0}', errors[0].message))
       updated += quantities.length
     }
     return { updated, failed }

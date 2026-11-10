@@ -18,6 +18,7 @@ import { usePageTitle } from '~/components/app/page'
 import { Mark } from '~/components/brand/logo'
 import { accessToken } from '~/agent/operator'
 import { useSession } from '~/data/store'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/app/receive')({
   validateSearch: (s: Record<string, unknown>): { new?: number; po?: string; id?: string } => ({ ...(s.new ? { new: 1 } : {}), ...(typeof s.po === 'string' ? { po: s.po } : {}), ...(typeof s.id === 'string' ? { id: s.id } : {}) }),
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/app/receive')({
 })
 
 function Receive() {
-  usePageTitle('Receive')
+  usePageTitle(tr('Receive'))
   const s = useSnapshot()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: '/app/receive' })
@@ -46,12 +47,12 @@ function Receive() {
   return (
     <div>
       <PageHeader
-        title="Receive"
-        description="Deliveries in. Read the invoice, check what changed, post it to stock."
+        title={tr('Receive')}
+        description={tr('Deliveries in. Read the invoice, check what changed, post it to stock.')}
         actions={
           canWrite && (
             <Button variant="primary" icon={<TrayArrowDownIcon size={14} />} onClick={() => void navigate({ search: { new: 1 } })}>
-              Receive a delivery
+              {tr('Receive a delivery')}
             </Button>
           )
         }
@@ -59,7 +60,7 @@ function Receive() {
       <div className="flex flex-col gap-8 px-5 py-6 md:px-8">
         {incoming.length > 0 && (
           <section>
-            <h2 className="mb-3 text-[13px] font-medium text-ink-2">Expected</h2>
+            <h2 className="mb-3 text-[13px] font-medium text-ink-2">{tr('Expected')}</h2>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {incoming.map((po) => {
                 const today = po.expectedOn === isoDay(new Date())
@@ -69,14 +70,14 @@ function Receive() {
                       <div className="min-w-0">
                         <div className="truncate text-[13.5px] font-medium text-ink">{sup[po.supplierId]?.name}</div>
                         <div className="text-[12px] text-ink-3">
-                          {po.number} · {po.lines.length} lines · {eur(poTotal(po), { decimals: 0 })}
+                          {tr('{0} · {1} lines · {2}', po.number, po.lines.length, eur(poTotal(po), { decimals: 0 }))}
                         </div>
                       </div>
-                      {today ? <Badge tone="accent" dot>Today</Badge> : <Badge tone="info">{po.expectedOn ? date(po.expectedOn, 'short') : '—'}</Badge>}
+                      {today ? <Badge tone="accent" dot>{tr('Today')}</Badge> : <Badge tone="info">{po.expectedOn ? date(po.expectedOn, 'short') : '—'}</Badge>}
                     </div>
                     {canWrite && (
                       <Button size="sm" icon={<CheckIcon size={13} />} onClick={() => void navigate({ search: { po: po.id } })}>
-                        Receive {po.status === 'partial' ? 'the rest' : 'this order'}
+                        {(po.status === 'partial' ? tr('Receive the rest') : tr('Receive this order'))}
                       </Button>
                     )}
                   </div>
@@ -86,22 +87,22 @@ function Receive() {
           </section>
         )}
         <section>
-          <h2 className="mb-3 text-[13px] font-medium text-ink-2">Receipts</h2>
+          <h2 className="mb-3 text-[13px] font-medium text-ink-2">{tr('Receipts')}</h2>
           {s.receipts.length === 0 ? (
-            <Empty icon={<TrayArrowDownIcon size={20} />} title="No deliveries yet">
-              When the van arrives, snap the invoice — Operator reads it and matches every line.
+            <Empty icon={<TrayArrowDownIcon size={20} />} title={tr('No deliveries yet')}>
+              {tr('When the van arrives, snap the invoice — Operator reads it and matches every line.')}
             </Empty>
           ) : (
             <div className="overflow-hidden rounded-[14px] bg-surface shadow-card">
               <table className="w-full min-w-[640px] text-[13px]">
                 <thead>
                   <tr className="text-left text-[12px] text-ink-3">
-                    <th className="px-4 py-2.5 font-normal">Receipt</th>
-                    <th className="px-4 py-2.5 font-normal">Supplier</th>
-                    <th className="px-4 py-2.5 font-normal">Document</th>
-                    <th className="px-4 py-2.5 font-normal">Location</th>
-                    <th className="px-4 py-2.5 text-right font-normal">Value</th>
-                    <th className="px-4 py-2.5 font-normal">Status</th>
+                    <th className="px-4 py-2.5 font-normal">{tr('Receipt')}</th>
+                    <th className="px-4 py-2.5 font-normal">{tr('Supplier')}</th>
+                    <th className="px-4 py-2.5 font-normal">{tr('Document')}</th>
+                    <th className="px-4 py-2.5 font-normal">{tr('Location')}</th>
+                    <th className="px-4 py-2.5 text-right font-normal">{tr('Value')}</th>
+                    <th className="px-4 py-2.5 font-normal">{tr('Status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -117,13 +118,13 @@ function Receive() {
                       <td className="tabular px-4 py-2.5 text-right text-ink">{eur(r.lines.reduce((a, l) => a + l.qty * l.unitCost, 0))}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5">
-                          {r.status === 'draft' ? <Badge tone="warn">Draft</Badge> : <Badge tone="ok">Posted</Badge>}
+                          {r.status === 'draft' ? <Badge tone="warn">{tr('Draft')}</Badge> : <Badge tone="ok">{tr('Posted')}</Badge>}
                           {r.source === 'scan' && (
                             <Badge tone="neutral">
-                              <CameraIcon size={10} /> Read
+                              <CameraIcon size={10} /> {tr('Read')}
                             </Badge>
                           )}
-                          {r.source === 'po' && <Badge tone="neutral">PO</Badge>}
+                          {r.source === 'po' && <Badge tone="neutral">{tr('PO')}</Badge>}
                         </div>
                       </td>
                     </tr>
@@ -145,12 +146,12 @@ const SAMPLE = {
   supplier: 'Distribuidora Atlântico',
   docRef: 'FT 2026/1418',
   lines: [
-    ['Sardinhas em azeite 120g', 48, 1.96, 'L2611SA', 365],
-    ['Atum em azeite 120g', 36, 2.4, 'L2611AT', 540],
-    ['Flor de sal 250g', 24, 2.3, null, null],
-    ['Mel de rosmaninho 500g', 12, 5.1, 'M2026-09', 400],
-    ['Polvo em azeite e alho 111g', 24, 4.2, 'L2610PO', 420],
-    ['Cavala com tomate 125g', 24, 2.1, 'L2611CV', 365],
+    [tr('Sardinhas em azeite 120g'), 48, 1.96, tr('L2611SA'), 365],
+    [tr('Atum em azeite 120g'), 36, 2.4, tr('L2611AT'), 540],
+    [tr('Flor de sal 250g'), 24, 2.3, null, null],
+    [tr('Mel de rosmaninho 500g'), 12, 5.1, 'M2026-09', 400],
+    [tr('Polvo em azeite e alho 111g'), 24, 4.2, tr('L2610PO'), 420],
+    [tr('Cavala com tomate 125g'), 24, 2.1, tr('L2611CV'), 365],
   ] as const,
 }
 
@@ -185,17 +186,17 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
     // Match against an open PO from the same supplier
     const po = sup ? s.orders.find((p) => p.supplierId === sup.id && (p.status === 'sent' || p.status === 'partial')) : undefined
     setR((cur) => ({ ...cur, supplierId: sup?.id ?? cur.supplierId, docRef: x.document_number ?? cur.docRef, docDate: x.document_date ?? cur.docDate, lines, source: 'scan', poId: po?.id ?? cur.poId }))
-    toast.success(`Read ${lines.length} lines`, { description: `${lines.filter((l) => l.itemId).length} matched to your catalogue${sup ? ` · ${sup.name}` : ''}` })
+    toast.success(tr('Read {0} lines', lines.length), { description: tr('{0} matched to your catalogue{1}', lines.filter((l) => l.itemId).length, sup ? ` · ${sup.name}` : '') })
   }
 
   const readFile = async (f: File) => {
     setReadError(null)
-    setReading('Reading the document…')
+    setReading(tr('Reading the document…'))
     try {
       const data = await new Promise<string>((res, rej) => {
         const fr = new FileReader()
         fr.onload = () => res(String(fr.result).split(',')[1] ?? '')
-        fr.onerror = () => rej(new Error('Couldn’t read the file'))
+        fr.onerror = () => rej(new Error(tr('Couldn’t read the file')))
         fr.readAsDataURL(f)
       })
       const mediaType = f.type === 'application/pdf' ? 'application/pdf' : f.type === 'image/png' ? 'image/png' : f.type === 'image/webp' ? 'image/webp' : 'image/jpeg'
@@ -203,10 +204,10 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
       const token = mode === 'cloud' ? await accessToken() : null
       const res = await fetch('/api/extract', { method: 'POST', headers: { 'content-type': 'application/json', 'x-nau-mode': mode, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ data, mediaType, catalogue: s.items.filter((i) => !i.archived).map((i) => ({ id: i.id, name: i.name, sku: i.sku, barcode: i.barcode })) }) })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Couldn’t read that document')
+      if (!res.ok) throw new Error(json.error ?? tr('Couldn’t read that document'))
       applyExtraction(json)
     } catch (e) {
-      setReadError(e instanceof Error ? e.message : 'Couldn’t read that document')
+      setReadError(e instanceof Error ? e.message : tr('Couldn’t read that document'))
     } finally {
       setReading(null)
     }
@@ -214,7 +215,7 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
 
   const readSample = async () => {
     setReadError(null)
-    for (const step of ['Reading FT 2026/1418…', 'Matching 6 lines to your catalogue…', 'Checking prices against the last delivery…']) {
+    for (const step of [tr('Reading FT 2026/1418…'), tr('Matching 6 lines to your catalogue…'), tr('Checking prices against the last delivery…')]) {
       setReading(step)
       await sleep(650)
     }
@@ -230,7 +231,7 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
 
   const onScan = (code: string) => {
     const it = s.items.find((i) => i.barcode === code || i.sku.toLowerCase() === code.toLowerCase())
-    if (!it) return toast.error('No item with that barcode', { description: code })
+    if (!it) return toast.error(tr('No item with that barcode'), { description: code })
     setR((cur) => {
       const ex = cur.lines.find((l) => l.itemId === it.id)
       if (ex) return { ...cur, lines: cur.lines.map((l) => (l.id === ex.id ? { ...l, qty: l.qty + 1 } : l)) }
@@ -240,11 +241,11 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
   }
 
   const save = async () => {
-    await commit(saveReceiptDraft(r), { success: 'Draft saved' })
+    await commit(saveReceiptDraft(r), { success: tr('Draft saved') })
     onClose()
   }
   const post = async () => {
-    await commit(postReceipt(s, r, actor), { success: `${r.number} posted`, description: `${r.lines.filter((l) => l.itemId).length} lines · ${eur(total)}` })
+    await commit(postReceipt(s, r, actor), { success: tr('{0} posted', r.number), description: tr('{0} lines · {1}', r.lines.filter((l) => l.itemId).length, eur(total)) })
     onClose()
   }
 
@@ -252,20 +253,20 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
     <Sheet
       open
       onOpenChange={(o) => !o && onClose()}
-      title={initial.poId ? `Receive ${s.orders.find((p) => p.id === initial.poId)?.number}` : r.status === 'draft' && s.receipts.some((x) => x.id === r.id) ? `Draft ${r.number}` : 'Receive a delivery'}
-      description="Check what arrived, then post it to stock."
+      title={initial.poId ? tr('Receive {0}', s.orders.find((p) => p.id === initial.poId)?.number) : r.status === 'draft' && s.receipts.some((x) => x.id === r.id) ? tr('Draft {0}', r.number) : tr('Receive a delivery')}
+      description={tr('Check what arrived, then post it to stock.')}
       width={820}
       footer={
         <>
           <span className="mr-auto text-[12.5px] text-ink-3">
-            {r.lines.length} lines · <span className="tabular font-medium text-ink">{eur(total)}</span>
-            {unmatched > 0 && <span className="text-warn-ink"> · {unmatched} not matched — they won’t be posted</span>}
+            {tr('{0} lines ·', r.lines.length)} <span className="tabular font-medium text-ink">{eur(total)}</span>
+            {unmatched > 0 && <span className="text-warn-ink"> {tr('· {0} not matched — they won’t be posted', unmatched)}</span>}
           </span>
           <Button variant="ghost" onClick={() => void save()} disabled={!r.lines.length}>
-            Save draft
+            {tr('Save draft')}
           </Button>
           <Button variant="primary" onClick={() => void post()} disabled={!r.lines.some((l) => l.itemId && l.qty > 0)}>
-            Post to stock
+            {tr('Post to stock')}
           </Button>
         </>
       }
@@ -275,18 +276,18 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
           <div className="grid gap-3 sm:grid-cols-3">
             <button type="button" onClick={() => file.current?.click()} className="press flex flex-col items-start gap-2 rounded-[14px] bg-surface p-4 text-left shadow-card hover:bg-surface-2">
               <CameraIcon size={20} className="text-accent" />
-              <span className="text-[13.5px] font-medium text-ink">Read the invoice</span>
-              <span className="text-[12.5px] text-ink-3">Photo or PDF of the fatura or guia. Operator matches each line.</span>
+              <span className="text-[13.5px] font-medium text-ink">{tr('Read the invoice')}</span>
+              <span className="text-[12.5px] text-ink-3">{tr('Photo or PDF of the fatura or guia. Operator matches each line.')}</span>
             </button>
             <button type="button" onClick={() => setMode('scan')} className="press flex flex-col items-start gap-2 rounded-[14px] bg-surface p-4 text-left shadow-card hover:bg-surface-2">
               <BarcodeIcon size={20} className="text-accent" />
-              <span className="text-[13.5px] font-medium text-ink">Scan the boxes</span>
-              <span className="text-[12.5px] text-ink-3">Each scan adds one. Camera or USB scanner.</span>
+              <span className="text-[13.5px] font-medium text-ink">{tr('Scan the boxes')}</span>
+              <span className="text-[12.5px] text-ink-3">{tr('Each scan adds one. Camera or USB scanner.')}</span>
             </button>
             <button type="button" onClick={() => set({ lines: [{ id: uid(), itemId: null, description: '', qty: 1, unitCost: 0 }] })} className="press flex flex-col items-start gap-2 rounded-[14px] bg-surface p-4 text-left shadow-card hover:bg-surface-2">
               <FileTextIcon size={20} className="text-accent" />
-              <span className="text-[13.5px] font-medium text-ink">Type it in</span>
-              <span className="text-[12.5px] text-ink-3">Add lines by hand.</span>
+              <span className="text-[13.5px] font-medium text-ink">{tr('Type it in')}</span>
+              <span className="text-[12.5px] text-ink-3">{tr('Add lines by hand.')}</span>
             </button>
           </div>
         )}
@@ -301,25 +302,25 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
             <WarningIcon size={16} />
             <span className="flex-1">{readError}</span>
             <Button size="sm" icon={<SparkleIcon size={13} />} onClick={() => void readSample()}>
-              Try the sample invoice
+              {tr('Try the sample invoice')}
             </Button>
           </div>
         )}
         {r.lines.length === 0 && !reading && !readError && (
           <button type="button" onClick={() => void readSample()} className="flex w-fit items-center gap-2 text-[12.5px] text-ink-3 hover:text-ink">
-            <img src="/samples/fatura-atlantico.jpg" alt="" className="h-9 w-7 rounded-[4px] object-cover shadow-card" /> No invoice at hand? Try a sample from Distribuidora Atlântico →
+            <img src="/samples/fatura-atlantico.jpg" alt="" className="h-9 w-7 rounded-[4px] object-cover shadow-card" /> {tr('No invoice at hand? Try a sample from Distribuidora Atlântico →')}
           </button>
         )}
 
         <div className="grid gap-3 sm:grid-cols-4">
-          <Field label="Supplier" className="sm:col-span-2">
-            <Select value={r.supplierId ?? ''} onChange={(v) => set({ supplierId: v })} options={s.suppliers.map((x) => ({ value: x.id, label: x.name }))} placeholder="Choose supplier" />
+          <Field label={tr('Supplier')} className="sm:col-span-2">
+            <Select value={r.supplierId ?? ''} onChange={(v) => set({ supplierId: v })} options={s.suppliers.map((x) => ({ value: x.id, label: x.name }))} placeholder={tr('Choose supplier')} />
           </Field>
-          <Field label="Into">
+          <Field label={tr('Into')}>
             <Select value={r.locationId} onChange={(v) => set({ locationId: v })} options={s.locations.map((l) => ({ value: l.id, label: l.name }))} />
           </Field>
-          <Field label="Document">
-            <Input value={r.docRef ?? ''} onChange={(e) => set({ docRef: e.target.value })} placeholder="FT 2026/123" />
+          <Field label={tr('Document')}>
+            <Input value={r.docRef ?? ''} onChange={(e) => set({ docRef: e.target.value })} placeholder={tr('FT 2026/123')} />
           </Field>
         </div>
 
@@ -327,7 +328,7 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
           <div className="rounded-[16px] bg-surface-2 p-3 shadow-[inset_0_0_0_1px_var(--gray-a3)]">
             <Scanner onDetect={onScan} compact />
             <button type="button" className="mt-2 text-[12px] text-ink-3 hover:text-ink" onClick={() => setMode('lines')}>
-              Hide scanner
+              {tr('Hide scanner')}
             </button>
           </div>
         )}
@@ -337,12 +338,12 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
             <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="text-left text-ink-3">
-                  <th className="px-3 py-2 font-normal">Item</th>
-                  <th className="w-24 px-2 py-2 text-right font-normal">Qty</th>
-                  <th className="w-28 px-2 py-2 text-right font-normal">Unit cost</th>
-                  <th className="w-28 px-2 py-2 font-normal">Lot</th>
-                  <th className="w-32 px-2 py-2 font-normal">Expires</th>
-                  <th className="w-24 px-2 py-2 text-right font-normal">Total</th>
+                  <th className="px-3 py-2 font-normal">{tr('Item')}</th>
+                  <th className="w-24 px-2 py-2 text-right font-normal">{tr('Qty')}</th>
+                  <th className="w-28 px-2 py-2 text-right font-normal">{tr('Unit cost')}</th>
+                  <th className="w-28 px-2 py-2 font-normal">{tr('Lot')}</th>
+                  <th className="w-32 px-2 py-2 font-normal">{tr('Expires')}</th>
+                  <th className="w-24 px-2 py-2 text-right font-normal">{tr('Total')}</th>
                   <th className="w-8" />
                 </tr>
               </thead>
@@ -353,22 +354,22 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
                   return (
                     <tr key={l.id} className="border-t border-line align-top">
                       <td className="px-3 py-2">
-                        <Select size="sm" value={l.itemId ?? ''} onChange={(v) => setLine(l.id, { itemId: v, previousCost: items[v]?.cost ?? null, description: items[v]?.name ?? l.description })} options={itemOptions} placeholder="Match to an item…" aria-label="Item" />
-                        {(!it || (l.confidence ?? 1) < 0.8) && l.description && <div className="mt-1 truncate text-[11.5px] text-ink-3">On the invoice: “{l.description}”</div>}
+                        <Select size="sm" value={l.itemId ?? ''} onChange={(v) => setLine(l.id, { itemId: v, previousCost: items[v]?.cost ?? null, description: items[v]?.name ?? l.description })} options={itemOptions} placeholder={tr('Match to an item…')} aria-label={tr('Item')} />
+                        {(!it || (l.confidence ?? 1) < 0.8) && l.description && <div className="mt-1 truncate text-[11.5px] text-ink-3">{tr('On the invoice: “{0}”', l.description)}</div>}
                       </td>
                       <td className="px-2 py-2">
-                        <NumberInput value={l.qty} min={0} onChange={(v) => setLine(l.id, { qty: v })} className="h-7 text-[12.5px]" aria-label="Quantity" />
+                        <NumberInput value={l.qty} min={0} onChange={(v) => setLine(l.id, { qty: v })} className="h-7 text-[12.5px]" aria-label={tr('Quantity')} />
                         {it && <div className="mt-1 text-right text-[11px] text-ink-4">{it.unit}</div>}
                       </td>
                       <td className="px-2 py-2">
-                        <NumberInput value={l.unitCost} min={0} onChange={(v) => setLine(l.id, { unitCost: v })} className="h-7 text-[12.5px]" aria-label="Unit cost" />
-                        {Math.abs(change) >= 0.02 && <div className={cn('mt-1 text-right text-[11px] font-medium', change > 0 ? 'text-warn-ink' : 'text-ok-ink')}>{change > 0 ? '+' : ''}{Math.round(change * 100)}% vs {eur(l.previousCost!)}</div>}
+                        <NumberInput value={l.unitCost} min={0} onChange={(v) => setLine(l.id, { unitCost: v })} className="h-7 text-[12.5px]" aria-label={tr('Unit cost')} />
+                        {Math.abs(change) >= 0.02 && <div className={cn('mt-1 text-right text-[11px] font-medium', change > 0 ? 'text-warn-ink' : 'text-ok-ink')}>{(change > 0 ? tr('+{0}% vs {1}', Math.round(change * 100), eur(l.previousCost!)) : tr('{0}% vs {1}', Math.round(change * 100), eur(l.previousCost!)))}</div>}
                       </td>
-                      <td className="px-2 py-2">{(it?.tracksExpiry || l.lot) && <Input value={l.lot ?? ''} onChange={(e) => setLine(l.id, { lot: e.target.value || null })} className="h-7 text-[12.5px]" placeholder="Lot" aria-label="Lot" />}</td>
-                      <td className="px-2 py-2">{(it?.tracksExpiry || l.expiresOn) && <Input type="date" value={l.expiresOn ?? ''} onChange={(e) => setLine(l.id, { expiresOn: e.target.value || null })} className="h-7 text-[12.5px]" aria-label="Expiry date" />}</td>
+                      <td className="px-2 py-2">{(it?.tracksExpiry || l.lot) && <Input value={l.lot ?? ''} onChange={(e) => setLine(l.id, { lot: e.target.value || null })} className="h-7 text-[12.5px]" placeholder={tr('Lot')} aria-label={tr('Lot')} />}</td>
+                      <td className="px-2 py-2">{(it?.tracksExpiry || l.expiresOn) && <Input type="date" value={l.expiresOn ?? ''} onChange={(e) => setLine(l.id, { expiresOn: e.target.value || null })} className="h-7 text-[12.5px]" aria-label={tr('Expiry date')} />}</td>
                       <td className="tabular px-2 py-2.5 text-right text-ink">{eur(l.qty * l.unitCost)}</td>
                       <td className="py-2 pr-2">
-                        <button type="button" aria-label="Remove line" onClick={() => set({ lines: r.lines.filter((x) => x.id !== l.id) })} className="touch-target flex size-7 items-center justify-center rounded-md text-ink-4 hover:bg-hover hover:text-bad-ink">
+                        <button type="button" aria-label={tr('Remove line')} onClick={() => set({ lines: r.lines.filter((x) => x.id !== l.id) })} className="touch-target flex size-7 items-center justify-center rounded-md text-ink-4 hover:bg-hover hover:text-bad-ink">
                           <TrashIcon size={13} />
                         </button>
                       </td>
@@ -382,24 +383,24 @@ function ReceiptEditor({ initial, onClose }: { initial: Receipt; onClose: () => 
         {r.lines.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <Button size="sm" icon={<PlusIcon size={13} />} onClick={() => set({ lines: [...r.lines, { id: uid(), itemId: null, description: '', qty: 1, unitCost: 0 }] })}>
-              Add line
+              {tr('Add line')}
             </Button>
             <Button size="sm" icon={<BarcodeIcon size={13} />} onClick={() => setMode(mode === 'scan' ? 'lines' : 'scan')}>
-              {mode === 'scan' ? 'Hide scanner' : 'Scan'}
+              {mode === 'scan' ? tr('Hide scanner') : tr('Scan')}
             </Button>
             <Button size="sm" icon={<CameraIcon size={13} />} onClick={() => file.current?.click()}>
-              Read another page
+              {tr('Read another page')}
             </Button>
             {r.poId && (
               <span className="ml-auto flex items-center gap-1.5 text-[12px] text-ink-3">
-                <TruckIcon size={13} /> Matched to {s.orders.find((p) => p.id === r.poId)?.number} — quantities update the order
+                <TruckIcon size={13} /> {tr('Matched to {0} — quantities update the order', s.orders.find((p) => p.id === r.poId)?.number)}
               </span>
             )}
           </div>
         )}
         {r.lines.some((l) => l.itemId) && (
           <p className="text-[12px] text-ink-4">
-            Posting updates stock at {s.locations.find((l) => l.id === r.locationId)?.name}, recalculates weighted average cost{r.lines.some((l) => l.lot) ? ', records lots' : ''} and can be reverted from the ledger. {fmtQty(r.lines.filter((l) => l.itemId).reduce((a, l) => a + l.qty, 0))} units in total.
+            {(r.lines.some((l) => l.lot) ? tr('Posting updates stock at {0}, recalculates weighted average cost, records lots and can be reverted from the ledger. {1} units in total.', s.locations.find((l) => l.id === r.locationId)?.name, fmtQty(r.lines.filter((l) => l.itemId).reduce((a, l) => a + l.qty, 0))) : tr('Posting updates stock at {0}, recalculates weighted average cost and can be reverted from the ledger. {1} units in total.', s.locations.find((l) => l.id === r.locationId)?.name, fmtQty(r.lines.filter((l) => l.itemId).reduce((a, l) => a + l.qty, 0))))}
           </p>
         )}
       </div>

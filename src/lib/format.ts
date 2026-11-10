@@ -1,11 +1,17 @@
-let locale = 'en-IE'
+import { currentLang, tr } from '~/i18n'
 
-export function setNumberLocale(next: 'en-IE' | 'pt-PT') {
-  locale = next
+/** Numbers follow the language unless the person picked a format in Settings. */
+let chosen: 'en-IE' | 'pt-PT' | null = null
+/** The locale numbers are written in right now. */
+export const numberLocale = () => chosen ?? (currentLang() === 'pt' ? 'pt-PT' : 'en-IE')
+
+export function setNumberLocale(next: 'en-IE' | 'pt-PT' | null) {
+  chosen = next
 }
 
 const cache = new Map<string, Intl.NumberFormat>()
 function nf(key: string, opts: Intl.NumberFormatOptions) {
+  const locale = numberLocale()
   const k = locale + key
   let f = cache.get(k)
   if (!f) {
@@ -52,11 +58,13 @@ export function signed(v: number, decimals = 0) {
 }
 
 const dtf = new Map<string, Intl.DateTimeFormat>()
-function df(key: string, opts: Intl.DateTimeFormatOptions) {
-  let f = dtf.get(key)
+/** `fixed` keeps the English layout for values that are parsed, not read. */
+function df(key: string, opts: Intl.DateTimeFormatOptions, fixed = false) {
+  const locale = fixed || currentLang() === 'en' ? 'en-GB' : 'pt-PT'
+  let f = dtf.get(locale + key)
   if (!f) {
-    f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Lisbon', ...opts })
-    dtf.set(key, f)
+    f = new Intl.DateTimeFormat(locale, { timeZone: 'Europe/Lisbon', ...opts })
+    dtf.set(locale + key, f)
   }
   return f
 }
@@ -82,8 +90,8 @@ export function relative(d: string | Date, now = new Date()) {
   const s = Math.round((now.getTime() - x.getTime()) / 1000)
   const abs = Math.abs(s)
   const fut = s < 0
-  const fmt = (n: number, u: string) => (fut ? `in ${n}${u}` : `${n}${u} ago`)
-  if (abs < 45) return fut ? 'in a moment' : 'just now'
+  const fmt = (n: number, u: string) => (fut ? tr('in {0}{1}', n, u) : tr('{0}{1} ago', n, u))
+  if (abs < 45) return fut ? tr('in a moment') : tr('just now')
   if (abs < 3600) return fmt(Math.round(abs / 60), 'm')
   if (abs < 86400) return fmt(Math.round(abs / 3600), 'h')
   if (abs < 86400 * 7) return fmt(Math.round(abs / 86400), 'd')
@@ -93,7 +101,7 @@ export function relative(d: string | Date, now = new Date()) {
 export function isoDay(d: Date | string) {
   const x = typeof d === 'string' ? new Date(d) : d
   // Lisbon day key
-  const parts = df('iso', { year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(x)
+  const parts = df('iso', { year: 'numeric', month: '2-digit', day: '2-digit' }, true).formatToParts(x)
   const g = (t: string) => parts.find((p) => p.type === t)?.value
   return `${g('year')}-${g('month')}-${g('day')}`
 }
@@ -111,9 +119,9 @@ export function daysBetween(a: string | Date, b: string | Date) {
 }
 
 export function greeting(now = new Date()) {
-  const h = Number(df('h', { hour: '2-digit', hour12: false }).format(now))
-  if (h < 5) return 'Good evening'
-  if (h < 12) return 'Good morning'
-  if (h < 19) return 'Good afternoon'
-  return 'Good evening'
+  const h = Number(df('h', { hour: '2-digit', hour12: false }, true).format(now))
+  if (h < 5) return tr('Good evening')
+  if (h < 12) return tr('Good morning')
+  if (h < 19) return tr('Good afternoon')
+  return tr('Good evening')
 }

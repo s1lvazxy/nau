@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
+import { Route as EnRouteImport } from './routes/en'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -23,6 +24,7 @@ import { Route as ApiAgentRouteImport } from './routes/api/agent'
 import { Route as ApiDevelopersRouteImport } from './routes/api/developers'
 import { Route as ApiExtractRouteImport } from './routes/api/extract'
 import { Route as ApiIntegrationsRouteImport } from './routes/api/integrations'
+import { Route as ApiMailRouteImport } from './routes/api/mail'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppApprovalsRouteImport } from './routes/app.approvals'
 import { Route as AppAutopilotRouteImport } from './routes/app.autopilot'
@@ -72,6 +74,11 @@ const DemoRoute = DemoRouteImport.update({
   path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnRoute = EnRouteImport.update({
+  id: '/en',
+  path: '/en',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
@@ -115,6 +122,11 @@ const ApiExtractRoute = ApiExtractRouteImport.update({
 const ApiIntegrationsRoute = ApiIntegrationsRouteImport.update({
   id: '/api/integrations',
   path: '/api/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMailRoute = ApiMailRouteImport.update({
+  id: '/api/mail',
+  path: '/api/mail',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -239,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/brand': typeof BrandRoute
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRoute
+  '/en': typeof EnRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -248,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/api/developers': typeof ApiDevelopersRoute
   '/api/extract': typeof ApiExtractRoute
   '/api/integrations': typeof ApiIntegrationsRoute
+  '/api/mail': typeof ApiMailRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/autopilot': typeof AppAutopilotRoute
   '/app/insights': typeof AppInsightsRoute
@@ -277,6 +291,7 @@ export interface FileRoutesByTo {
   '/brand': typeof BrandRoute
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRoute
+  '/en': typeof EnRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -286,6 +301,7 @@ export interface FileRoutesByTo {
   '/api/developers': typeof ApiDevelopersRoute
   '/api/extract': typeof ApiExtractRoute
   '/api/integrations': typeof ApiIntegrationsRoute
+  '/api/mail': typeof ApiMailRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/autopilot': typeof AppAutopilotRoute
   '/app/insights': typeof AppInsightsRoute
@@ -317,6 +333,7 @@ export interface FileRoutesById {
   '/brand': typeof BrandRoute
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRoute
+  '/en': typeof EnRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -326,6 +343,7 @@ export interface FileRoutesById {
   '/api/developers': typeof ApiDevelopersRoute
   '/api/extract': typeof ApiExtractRoute
   '/api/integrations': typeof ApiIntegrationsRoute
+  '/api/mail': typeof ApiMailRoute
   '/app/approvals': typeof AppApprovalsRoute
   '/app/autopilot': typeof AppAutopilotRoute
   '/app/insights': typeof AppInsightsRoute
@@ -358,6 +376,7 @@ export interface FileRouteTypes {
     | '/brand'
     | '/contact'
     | '/demo'
+    | '/en'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -367,6 +386,7 @@ export interface FileRouteTypes {
     | '/api/developers'
     | '/api/extract'
     | '/api/integrations'
+    | '/api/mail'
     | '/app/approvals'
     | '/app/autopilot'
     | '/app/insights'
@@ -396,6 +416,7 @@ export interface FileRouteTypes {
     | '/brand'
     | '/contact'
     | '/demo'
+    | '/en'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -405,6 +426,7 @@ export interface FileRouteTypes {
     | '/api/developers'
     | '/api/extract'
     | '/api/integrations'
+    | '/api/mail'
     | '/app/approvals'
     | '/app/autopilot'
     | '/app/insights'
@@ -435,6 +457,7 @@ export interface FileRouteTypes {
     | '/brand'
     | '/contact'
     | '/demo'
+    | '/en'
     | '/forgot-password'
     | '/login'
     | '/onboarding'
@@ -444,6 +467,7 @@ export interface FileRouteTypes {
     | '/api/developers'
     | '/api/extract'
     | '/api/integrations'
+    | '/api/mail'
     | '/app/approvals'
     | '/app/autopilot'
     | '/app/insights'
@@ -475,6 +499,7 @@ export interface RootRouteChildren {
   BrandRoute: typeof BrandRoute
   ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRoute
+  EnRoute: typeof EnRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -484,6 +509,7 @@ export interface RootRouteChildren {
   ApiDevelopersRoute: typeof ApiDevelopersRoute
   ApiExtractRoute: typeof ApiExtractRoute
   ApiIntegrationsRoute: typeof ApiIntegrationsRoute
+  ApiMailRoute: typeof ApiMailRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   LegalDocRoute: typeof LegalDocRoute
   ApiCronTickRoute: typeof ApiCronTickRoute
@@ -527,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/demo'
       fullPath: '/demo'
       preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en': {
+      id: '/en'
+      path: '/en'
+      fullPath: '/en'
+      preLoaderRoute: typeof EnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -590,6 +623,13 @@ declare module '@tanstack/react-router' {
       path: '/api/integrations'
       fullPath: '/api/integrations'
       preLoaderRoute: typeof ApiIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mail': {
+      id: '/api/mail'
+      path: '/api/mail'
+      fullPath: '/api/mail'
+      preLoaderRoute: typeof ApiMailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -804,6 +844,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrandRoute: BrandRoute,
   ContactRoute: ContactRoute,
   DemoRoute: DemoRoute,
+  EnRoute: EnRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
@@ -813,6 +854,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDevelopersRoute: ApiDevelopersRoute,
   ApiExtractRoute: ApiExtractRoute,
   ApiIntegrationsRoute: ApiIntegrationsRoute,
+  ApiMailRoute: ApiMailRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   LegalDocRoute: LegalDocRoute,
   ApiCronTickRoute: ApiCronTickRoute,

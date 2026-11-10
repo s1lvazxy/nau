@@ -4,6 +4,7 @@ import { uid } from '~/lib/utils'
 import { mergeChangeSets, type ChangeSet } from '~/data/changeset'
 import { event, renumberOrders } from '~/data/commands'
 import { isUndoable, materializeUndo, undoSpec } from '~/data/undo'
+import { tr } from '~/i18n'
 
 /** Reversible work runs alone; money and anything that leaves the building waits unless a limit is set. */
 export const DEFAULT_POLICY: Policy = { reversible: 'auto', money: 'ask', outbound: 'ask', perActionLimit: 250, dailyLimit: 750 }
@@ -34,13 +35,13 @@ export interface Intent {
 }
 
 export function decide(policy: Policy, intent: Pick<Intent, 'risk' | 'impactEur'>, spent: number): { auto: boolean; reason: string } {
-  if (intent.risk === 'reversible') return policy.reversible === 'auto' ? { auto: true, reason: 'Reversible — can be undone from the journal' } : { auto: false, reason: 'You asked to approve every change' }
-  const what = intent.risk === 'money' ? 'Spending' : 'Sending outside Nau'
-  if (policy[intent.risk] !== 'auto') return { auto: false, reason: `${what} waits for you` }
+  if (intent.risk === 'reversible') return policy.reversible === 'auto' ? { auto: true, reason: tr('Reversible — can be undone from the journal') } : { auto: false, reason: tr('You asked to approve every change') }
+  const what = intent.risk === 'money' ? tr('Spending') : tr('Sending outside Nau')
+  if (policy[intent.risk] !== 'auto') return { auto: false, reason: tr('{0} waits for you', what) }
   const value = intent.impactEur ?? 0
-  if (value > policy.perActionLimit) return { auto: false, reason: `Above the ${eur(policy.perActionLimit, { decimals: 0 })} per-action limit` }
-  if (spent + value > policy.dailyLimit) return { auto: false, reason: `Would pass today’s ${eur(policy.dailyLimit, { decimals: 0 })} limit (${eur(spent, { decimals: 0 })} used)` }
-  return { auto: true, reason: `Within the ${eur(policy.perActionLimit, { decimals: 0 })} limit` }
+  if (value > policy.perActionLimit) return { auto: false, reason: tr('Above the {0} per-action limit', eur(policy.perActionLimit, { decimals: 0 })) }
+  if (spent + value > policy.dailyLimit) return { auto: false, reason: tr('Would pass today’s {0} limit ({1} used)', eur(policy.dailyLimit, { decimals: 0 }), eur(spent, { decimals: 0 })) }
+  return { auto: true, reason: tr('Within the {0} limit', eur(policy.perActionLimit, { decimals: 0 })) }
 }
 
 /**
@@ -48,7 +49,7 @@ export function decide(policy: Policy, intent: Pick<Intent, 'risk' | 'impactEur'
  * the work itself plus its undo spec when it may run alone, or only the pending entry when it waits.
  */
 export function record(s: Snapshot, intent: Intent, actor: Actor, opts: { force?: 'ask' | 'auto' } = {}): { action: AgentAction; cs: ChangeSet; applied: boolean; reason: string } {
-  const d = opts.force ? { auto: opts.force === 'auto', reason: opts.force === 'auto' ? 'Applied' : 'Waiting for approval' } : decide(policyOf(s.workspace.settings), intent, spentToday(s))
+  const d = opts.force ? { auto: opts.force === 'auto', reason: opts.force === 'auto' ? tr('Applied') : tr('Waiting for approval') } : decide(policyOf(s.workspace.settings), intent, spentToday(s))
   const at = new Date().toISOString()
   const base: AgentAction = { id: uid(), kind: intent.kind, risk: intent.risk, title: intent.title, lines: intent.lines, impactEur: intent.impactEur ?? null, cs: intent.cs, undo: null, status: 'pending', source: intent.source, actor, approvedBy: null, reason: d.reason, link: intent.link ?? null, createdAt: at, resolvedAt: null }
   if (!d.auto) return { action: base, cs: { upserts: { actions: [base] } }, applied: false, reason: d.reason }
@@ -60,21 +61,21 @@ export function record(s: Snapshot, intent: Intent, actor: Actor, opts: { force?
 export function approveAction(s: Snapshot, a: AgentAction, actor: Actor): ChangeSet {
   const cs = renumberOrders(s, a.cs)
   const undo = undoSpec(s, cs)
-  const done: AgentAction = { ...a, cs: {}, undo: isUndoable(undo) ? undo : null, status: 'applied', resolvedAt: new Date().toISOString(), approvedBy: actor.name, reason: `Approved by ${actor.name}` }
+  const done: AgentAction = { ...a, cs: {}, undo: isUndoable(undo) ? undo : null, status: 'applied', resolvedAt: new Date().toISOString(), approvedBy: actor.name, reason: tr('Approved by {0}', actor.name) }
   return mergeChangeSets(cs, { upserts: { actions: [done] } })
 }
 
 export function rejectAction(a: AgentAction, actor: Actor): ChangeSet {
-  return { upserts: { actions: [{ ...a, status: 'rejected', resolvedAt: new Date().toISOString(), reason: `Dismissed by ${actor.name}` }] } }
+  return { upserts: { actions: [{ ...a, status: 'rejected', resolvedAt: new Date().toISOString(), reason: tr('Dismissed by {0}', actor.name) }] } }
 }
 
 export function undoAction(s: Snapshot, a: AgentAction, actor: Actor): ChangeSet {
   if (a.status !== 'applied' || !a.undo) return {}
   const back = materializeUndo(s, a.undo, actor)
   return mergeChangeSets(back, {
-    upserts: { actions: [{ ...a, status: 'undone', resolvedAt: new Date().toISOString(), reason: `Undone by ${actor.name}` }] },
-    events: [event('undo', `Undid “${a.title}”`, actor, null, a.link ?? null)],
+    upserts: { actions: [{ ...a, status: 'undone', resolvedAt: new Date().toISOString(), reason: tr('Undone by {0}', actor.name) }] },
+    events: [event('undo', tr('Undid “{0}”', a.title), actor, null, a.link ?? null)],
   })
 }
 
-export const RISK_LABEL: Record<Risk, string> = { reversible: 'Reversible', money: 'Money', outbound: 'Leaves Nau' }
+export const RISK_LABEL: Record<Risk, string> = { reversible: tr('Reversible'), money: tr('Money'), outbound: tr('Leaves Nau') }

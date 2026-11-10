@@ -15,6 +15,7 @@ import { Sparkline } from '~/components/ui/charts'
 import { ItemSheet } from '~/components/app/item-dialogs'
 import { useActions } from '~/components/app/actions'
 import { usePageTitle } from '~/components/app/page'
+import { tr } from '~/i18n'
 
 type StatusFilter = 'all' | 'low' | 'over' | 'dead' | 'expiring' | 'archived'
 
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/app/items/')({
 })
 
 function Items() {
-  usePageTitle('Items')
+  usePageTitle(tr('Items'))
   const s = useSnapshot()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: '/app/items/' })
@@ -65,14 +66,14 @@ function Items() {
     () => [
       {
         id: 'select',
-        header: ({ table }) => <input type="checkbox" aria-label="Select all" className="accent-[var(--accent-9)]" checked={table.getIsAllRowsSelected()} onChange={table.getToggleAllRowsSelectedHandler()} />,
-        cell: ({ row }) => <input type="checkbox" aria-label={`Select ${row.original.item.name}`} className="accent-[var(--accent-9)]" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()} onClick={(e) => e.stopPropagation()} />,
+        header: ({ table }) => <input type="checkbox" aria-label={tr('Select all')} className="accent-[var(--accent-9)]" checked={table.getIsAllRowsSelected()} onChange={table.getToggleAllRowsSelectedHandler()} />,
+        cell: ({ row }) => <input type="checkbox" aria-label={tr('Select {0}', row.original.item.name)} className="accent-[var(--accent-9)]" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()} onClick={(e) => e.stopPropagation()} />,
         size: 36,
         enableSorting: false,
       },
       {
         id: 'name',
-        header: 'Item',
+        header: tr('Item'),
         accessorFn: (r) => r.item.name,
         cell: ({ row: { original: r } }) => (
           <div className="flex min-w-0 items-center gap-2.5">
@@ -90,7 +91,7 @@ function Items() {
       },
       {
         id: 'status',
-        header: 'Status',
+        header: tr('Status'),
         accessorFn: (r) => order[r.status] * 1000 + Math.min(999, Number.isFinite(r.cover) ? r.cover : 999),
         cell: ({ row: { original: r } }) => (
           <Badge tone={STATUS_META[r.status].tone} dot>
@@ -101,23 +102,23 @@ function Items() {
       },
       {
         id: 'onHand',
-        header: 'On hand',
+        header: tr('On hand'),
         accessorFn: (r) => r.onHand,
         cell: ({ row: { original: r } }) => (
           <div className="text-right">
             <div className="tabular text-[13px] text-ink">{fmtQty(r.onHand, r.item.unit)}</div>
-            {r.onOrder > 0 && <div className="tabular text-[11px] text-info-ink">+{num(r.onOrder)} on order</div>}
+            {r.onOrder > 0 && <div className="tabular text-[11px] text-info-ink">{tr('+{0} on order', num(r.onOrder))}</div>}
           </div>
         ),
         size: 110,
       },
       {
         id: 'cover',
-        header: 'Cover',
+        header: tr('Cover'),
         accessorFn: (r) => (Number.isFinite(r.cover) ? r.cover : 9999),
         cell: ({ row: { original: r } }) =>
           r.item.tags.includes('daily') ? (
-            <div className="text-right text-[12px] text-ink-3">Daily</div>
+            <div className="text-right text-[12px] text-ink-3">{tr('Daily')}</div>
           ) : (
             <div className={cn('tabular text-right text-[13px]', r.cover < r.leadTime ? 'text-bad-ink' : 'text-ink-2')}>{!Number.isFinite(r.cover) ? '—' : r.cover < 1 ? '<1 d' : `${Math.floor(r.cover)} d`}</div>
           ),
@@ -125,28 +126,28 @@ function Items() {
       },
       {
         id: 'trend',
-        header: '30 days',
+        header: tr('30 days'),
         enableSorting: false,
         cell: ({ row: { original: r } }) => (r.series.length ? <Sparkline values={r.series} width={84} height={22} tone={r.trend > 0.1 ? 'ok' : r.trend < -0.2 ? 'bad' : 'ink'} /> : null),
         size: 100,
       },
       {
         id: 'value',
-        header: 'Value',
+        header: tr('Value'),
         accessorFn: (r) => r.value,
         cell: ({ row: { original: r } }) => <div className="tabular text-right text-[13px] text-ink-2">{eur(r.value, { decimals: 0 })}</div>,
         size: 90,
       },
       {
         id: 'price',
-        header: 'Price',
+        header: tr('Price'),
         accessorFn: (r) => r.item.price,
         cell: ({ row: { original: r } }) => <div className="tabular text-right text-[13px] text-ink-2">{eur(r.item.price)}</div>,
         size: 80,
       },
       {
         id: 'supplier',
-        header: 'Supplier',
+        header: tr('Supplier'),
         accessorFn: (r) => sups[r.item.supplierId ?? '']?.name ?? '',
         cell: ({ row: { original: r } }) => <div className="truncate text-[12.5px] text-ink-3">{sups[r.item.supplierId ?? '']?.name ?? '—'}</div>,
         size: 170,
@@ -167,7 +168,7 @@ function Items() {
   const selected = Object.keys(selection).filter((k) => selection[k])
 
   const exportCsv = () => {
-    const header = ['SKU', 'Name', 'Barcode', 'Category', 'Unit', 'On hand', ...s.locations.map((l) => l.name), 'Cost', 'Price', 'IVA', 'Value', 'Status', 'Supplier']
+    const header = ['SKU', tr('Name'), tr('Barcode'), tr('Category'), tr('Unit'), tr('On hand'), ...s.locations.map((l) => l.name), tr('Cost'), tr('Price'), 'IVA', tr('Value'), tr('Status'), tr('Supplier')]
     const lines = table.getSortedRowModel().rows.map(({ original: r }) => [r.item.sku, r.item.name, r.item.barcode ?? '', cats[r.item.categoryId ?? '']?.name ?? '', r.item.unit, r.onHand, ...s.locations.map((l) => r.byLocation[l.id] ?? 0), r.item.cost, r.item.price, r.item.vatRate, r.value, STATUS_META[r.status].label, sups[r.item.supplierId ?? '']?.name ?? ''])
     const csv = [header, ...lines].map((row) => row.map((c) => csvCell(c)).join(';')).join('\r\n')
     downloadFile(`nau-items-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + csv, 'text/csv;charset=utf-8')
@@ -176,16 +177,16 @@ function Items() {
   return (
     <div>
       <PageHeader
-        title="Items"
-        description={`${stats.length} active items · ${eur(stats.reduce((a, x) => a + x.value, 0), { decimals: 0 })} at cost`}
+        title={tr('Items')}
+        description={tr('{0} active items · {1} at cost', stats.length, eur(stats.reduce((a, x) => a + x.value, 0), { decimals: 0 }))}
         actions={
           <>
             <Button icon={<DownloadSimpleIcon size={14} />} onClick={exportCsv}>
-              Export
+              {tr('Export')}
             </Button>
             {canWrite && (
               <Button variant="primary" icon={<PlusIcon size={14} />} onClick={() => void navigate({ search: { ...search, new: 1 } })}>
-                New item
+                {tr('New item')}
               </Button>
             )}
           </>
@@ -196,55 +197,55 @@ function Items() {
             value={status}
             onChange={(v) => void navigate({ search: { ...search, status: v === 'all' ? undefined : v } })}
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'low', label: 'Needs stock' },
-              { value: 'expiring', label: 'Expiring' },
-              { value: 'over', label: 'Overstock' },
-              { value: 'dead', label: 'Not moving' },
-              { value: 'archived', label: 'Archived' },
+              { value: 'all', label: tr('All') },
+              { value: 'low', label: tr('Needs stock') },
+              { value: 'expiring', label: tr('Expiring') },
+              { value: 'over', label: tr('Overstock') },
+              { value: 'dead', label: tr('Not moving') },
+              { value: 'archived', label: tr('Archived') },
             ]}
           />
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, SKU, barcode…" leading={<MagnifyingGlassIcon size={14} />} className="w-[240px]" aria-label="Search items" />
-            <Select size="sm" value={cat} onChange={setCat} className="w-[170px]" aria-label="Category" options={[{ value: 'all', label: 'All categories' }, ...s.categories.map((c) => ({ value: c.id, label: c.name }))]} />
-            <Select size="sm" value={loc} onChange={setLoc} className="w-[160px]" aria-label="Location" options={[{ value: 'all', label: 'All locations' }, ...s.locations.map((l) => ({ value: l.id, label: l.name }))]} />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('Search name, SKU, barcode…')} leading={<MagnifyingGlassIcon size={14} />} className="w-[240px]" aria-label={tr('Search items')} />
+            <Select size="sm" value={cat} onChange={setCat} className="w-[170px]" aria-label={tr('Category')} options={[{ value: 'all', label: tr('All categories') }, ...s.categories.map((c) => ({ value: c.id, label: c.name }))]} />
+            <Select size="sm" value={loc} onChange={setLoc} className="w-[160px]" aria-label={tr('Location')} options={[{ value: 'all', label: tr('All locations') }, ...s.locations.map((l) => ({ value: l.id, label: l.name }))]} />
           </div>
         </div>
       </PageHeader>
 
       {selected.length > 0 && (
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-line bg-accent-soft px-5 py-2 backdrop-blur md:px-8">
-          <span className="text-[13px] font-medium text-accent-ink">{selected.length} selected</span>
+          <span className="text-[13px] font-medium text-accent-ink">{tr('{0} selected', selected.length)}</span>
           <Button
             size="sm"
             icon={<ClipboardTextIcon size={13} />}
             onClick={() => {
-              const { cs, count } = startCount(s, { name: `Count of ${selected.length} items`, locationId: loc !== 'all' ? loc : s.locations.find((l) => l.isDefault)?.id ?? s.locations[0].id, itemIds: selected }, actor)
-              void commit(cs, { success: 'Count started' }).then(() => navigate({ to: '/app/counts/$countId', params: { countId: count.id } }))
+              const { cs, count } = startCount(s, { name: tr('Count of {0} items', selected.length), locationId: loc !== 'all' ? loc : s.locations.find((l) => l.isDefault)?.id ?? s.locations[0].id, itemIds: selected }, actor)
+              void commit(cs, { success: tr('Count started') }).then(() => navigate({ to: '/app/counts/$countId', params: { countId: count.id } }))
             }}
           >
-            Count these
+            {tr('Count these')}
           </Button>
           <Button
             size="sm"
             icon={<ArchiveIcon size={13} />}
             onClick={() => {
               const archiving = status !== 'archived'
-              void commit(archiveItems(s, selected, archiving, actor), { success: archiving ? 'Archived' : 'Restored', undo: archiveItems(s, selected, !archiving, actor) })
+              void commit(archiveItems(s, selected, archiving, actor), { success: archiving ? tr('Archived') : tr('Restored'), undo: archiveItems(s, selected, !archiving, actor) })
               setSelection({})
             }}
           >
-            {status === 'archived' ? 'Restore' : 'Archive'}
+            {status === 'archived' ? tr('Restore') : tr('Archive')}
           </Button>
           <button className="ml-auto text-[12.5px] text-ink-3 hover:text-ink" onClick={() => setSelection({})}>
-            Clear
+            {tr('Clear')}
           </button>
         </div>
       )}
 
       {rows.length === 0 ? (
-        <Empty icon={<PackageIcon size={20} />} title={s.items.length ? 'No items match' : 'No items yet'} action={!s.items.length && canWrite ? <Button variant="primary" icon={<PlusIcon size={14} />} onClick={() => void navigate({ search: { new: 1 } })}>Add your first item</Button> : undefined}>
-          {s.items.length ? 'Try another filter or search.' : 'Add items one by one, import a spreadsheet from Insights, or scan barcodes as deliveries arrive.'}
+        <Empty icon={<PackageIcon size={20} />} title={s.items.length ? tr('No items match') : tr('No items yet')} action={!s.items.length && canWrite ? <Button variant="primary" icon={<PlusIcon size={14} />} onClick={() => void navigate({ search: { new: 1 } })}>{tr('Add your first item')}</Button> : undefined}>
+          {s.items.length ? tr('Try another filter or search.') : tr('Add items one by one, import a spreadsheet from Insights, or scan barcodes as deliveries arrive.')}
         </Empty>
       ) : (
         <>
@@ -258,7 +259,7 @@ function Items() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-medium text-ink">{r.item.name}</span>
                     <span className="tabular block text-[12px] text-ink-3">
-                      {fmtQty(r.onHand, r.item.unit)} · {r.item.tags.includes('daily') ? 'daily' : !Number.isFinite(r.cover) ? 'no sales' : r.cover < 1 ? '<1 day' : `${Math.floor(r.cover)} days`} · {eur(r.item.price)}
+                      {fmtQty(r.onHand, r.item.unit)} · {r.item.tags.includes('daily') ? tr('daily') : !Number.isFinite(r.cover) ? tr('no sales') : r.cover < 1 ? tr('<1 day') : tr('{0} days', Math.floor(r.cover))} · {eur(r.item.price)}
                     </span>
                   </span>
                   <Badge tone={STATUS_META[r.status].tone} dot>

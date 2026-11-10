@@ -8,6 +8,7 @@ import type { ChangeSet } from './changeset'
 import { loadSnapshot } from './load'
 import { supabase } from './supabase'
 import { changeSetToDb } from './changeset-db'
+import { tr } from '~/i18n'
 
 export { changeSetToDb }
 
@@ -24,11 +25,11 @@ function toSession(s: SbSession | null): Session | null {
 function fail(error: { message: string; code?: string } | null): asserts error is null {
   if (error) {
     const msg = /Invalid login/i.test(error.message)
-      ? 'That email and password don’t match.'
+      ? tr('That email and password don’t match.')
       : /already registered/i.test(error.message)
-        ? 'An account with this email already exists. Sign in instead.'
+        ? tr('An account with this email already exists. Sign in instead.')
         : /Email not confirmed/i.test(error.message)
-          ? 'Confirm your email first — we sent you a link.'
+          ? tr('Confirm your email first — we sent you a link.')
           : error.message
     throw new AuthError(msg, error.code)
   }
@@ -138,7 +139,7 @@ export function createCloudBackend(): Backend {
               const hist = initial.movements.filter((m) => m.itemId === l.itemId && m.locationId === l.locationId).reduce((a, m) => a + m.qty, 0)
               const diff = Math.round((l.onHand - hist) * 1000) / 1000
               return diff
-                ? { id: crypto.randomUUID(), itemId: l.itemId, locationId: l.locationId, type: 'count' as const, qty: diff, actor: { kind: 'system' as const, name: 'Opening balance' }, createdAt: addDays(new Date(), -91).toISOString(), note: 'Opening balance' }
+                ? { id: crypto.randomUUID(), itemId: l.itemId, locationId: l.locationId, type: 'count' as const, qty: diff, actor: { kind: 'system' as const, name: tr('Opening balance') }, createdAt: addDays(new Date(), -91).toISOString(), note: tr('Opening balance') }
                 : null
             })
             .filter((x) => x !== null),

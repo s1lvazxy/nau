@@ -4,6 +4,7 @@ import { hashString, normalize, round, stableId } from '~/lib/utils'
 import type { ChangeSet } from '~/data/changeset'
 import { event, newItem } from '~/data/commands'
 import { emptyReport, type ExtDocument, type ExtLine, type ExtParty, type ExtProduct, type IngestBatch, type IngestReport, type Link } from './types'
+import { tr } from '~/i18n'
 
 export interface IngestOptions {
   /** Connector id, 'import' or 'api' — also the namespace for deterministic ids */
@@ -263,7 +264,7 @@ export function ingest(s: Snapshot, batch: IngestBatch, o: IngestOptions): Inges
           source: 'import',
           createdAt: at,
           postedAt: o.postPurchases ? at : null,
-          note: `From ${o.label}`,
+          note: tr('From {0}', o.label),
         })
         if (o.postPurchases)
           lines.forEach(({ item, line }, i) => {
@@ -305,7 +306,7 @@ export function ingest(s: Snapshot, batch: IngestBatch, o: IngestOptions): Inges
     for (const [k, entries] of byKey) {
       const { item, location } = entries[0]
       const cost = items.get(item.id)!.cost
-      const base = { itemId: item.id, locationId: location.id, type: 'count' as const, unitCost: cost, actor: o.actor, createdAt: now.toISOString(), note: `Stock from ${o.label}` }
+      const base = { itemId: item.id, locationId: location.id, type: 'count' as const, unitCost: cost, actor: o.actor, createdAt: now.toISOString(), note: tr('Stock from {0}', o.label) }
       const lots = entries.filter((e) => e.lot)
       const plain = round(entries.filter((e) => !e.lot).reduce((a, e) => a + e.qty, 0), 3)
       // Bring the level to the plain figure first, then add each lot on top
@@ -328,7 +329,7 @@ export function ingest(s: Snapshot, batch: IngestBatch, o: IngestOptions): Inges
   if (movements.length) cs.movements = movements
 
   const r = report
-  const parts = [r.products.created && `${r.products.created} new items`, r.products.updated && `${r.products.updated} updated`, r.documents.sales && `${r.documents.sales} sales`, r.documents.refunds && `${r.documents.refunds} returns`, r.documents.purchases && `${r.documents.purchases} deliveries`, r.stockSet && `${r.stockSet} stock levels`, r.lines.unmatched && `${r.lines.unmatched} lines to match`].filter(Boolean)
-  if (parts.length) cs.events = [event(o.source === 'import' ? 'import' : 'sync', `${o.label}: ${parts.join(' · ')}`, o.actor, r.negative ? `${round(r.negative, 1)} units sold without stock behind them — a count is due` : null, o.source === 'import' ? '/app/items' : '/app/integrations')]
+  const parts = [r.products.created && tr('{0} new items', r.products.created), r.products.updated && `${r.products.updated} updated`, r.documents.sales && `${r.documents.sales} sales`, r.documents.refunds && `${r.documents.refunds} returns`, r.documents.purchases && `${r.documents.purchases} deliveries`, r.stockSet && tr('{0} stock levels', r.stockSet), r.lines.unmatched && tr('{0} lines to match', r.lines.unmatched)].filter(Boolean)
+  if (parts.length) cs.events = [event(o.source === 'import' ? 'import' : 'sync', `${o.label}: ${parts.join(' · ')}`, o.actor, r.negative ? tr('{0} units sold without stock behind them — a count is due', round(r.negative, 1)) : null, o.source === 'import' ? '/app/items' : '/app/integrations')]
   return { cs, links, report }
 }

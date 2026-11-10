@@ -9,6 +9,8 @@ export function getRouter() {
   })
   const router = createRouter({
     routeTree,
+    // Under a sub-path when the site is served from one (the static website on GitHub Pages)
+    basepath: import.meta.env.BASE_URL.replace(/\/$/, '') || '/',
     context: { queryClient },
     defaultPreload: 'intent',
     scrollRestoration: true,

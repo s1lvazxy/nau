@@ -7,6 +7,7 @@ import { admin, serverConfigured } from '~/server/db'
 import { json, sameOrigin } from '~/server/guard'
 import { connect, disconnect, list, pushStock, setStatus, sync } from '~/server/integrations'
 import { runWorkspace } from '~/server/agent-run'
+import { tr } from '~/i18n'
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('connect'), workspace: z.string(), connector: z.string().max(40), fields: z.record(z.string(), z.string().max(2000)) }),
@@ -14,7 +15,7 @@ const Body = z.discriminatedUnion('action', [
 ])
 
 const origin = (request: Request) => process.env.VITE_SITE_URL?.replace(/\/$/, '') || new URL(request.url).origin
-const fail = (e: unknown) => (e instanceof ConnectorError ? json({ error: e.message }, e.status === 404 ? 404 : 422) : (console.error('[integrations]', e), json({ error: 'Something went wrong on our side.' }, 500)))
+const fail = (e: unknown) => (e instanceof ConnectorError ? json({ error: e.message }, e.status === 404 ? 404 : 422) : (console.error('[integrations]', e), json({ error: tr('Something went wrong on our side.') }, 500)))
 
 export const Route = createFileRoute('/api/integrations')({
   server: {
@@ -33,14 +34,14 @@ export const Route = createFileRoute('/api/integrations')({
         }
       },
       POST: async ({ request }) => {
-        if (!sameOrigin(request)) return json({ error: 'Forbidden' }, 403)
+        if (!sameOrigin(request)) return json({ error: tr('Forbidden') }, 403)
         const parsed = Body.safeParse(await request.json().catch(() => null))
-        if (!parsed.success) return json({ error: 'Invalid request' }, 400)
+        if (!parsed.success) return json({ error: tr('Invalid request') }, 400)
         const b = parsed.data
         // Reading the vendor is ordinary work; credentials and anything that writes outside are for admins
         const auth = await requireMember(request, b.workspace, b.action === 'sync' ? 'member' : 'admin')
         if (!auth.ok) return auth.res
-        if (!secretsConfigured()) return json({ error: 'Set NAU_SECRET_KEY on the server before connecting a system: credentials are stored encrypted with it.' }, 503)
+        if (!secretsConfigured()) return json({ error: tr('Set NAU_SECRET_KEY on the server before connecting a system: credentials are stored encrypted with it.') }, 503)
         try {
           if (b.action === 'connect') return json({ integration: await connect(b.workspace, auth.user.id, b.connector, b.fields, origin(request)) })
           if (b.action === 'disconnect') return (await disconnect(b.workspace, b.id), json({ ok: true }))
@@ -51,7 +52,7 @@ export const Route = createFileRoute('/api/integrations')({
             const at = new Date().toISOString()
             await admin().rpc('apply_changeset_service', {
               p_workspace: b.workspace,
-              p_changes: { upserts: { actions: [{ id: crypto.randomUUID(), kind: 'sync', risk: 'outbound', title: `Sent stock to ${out.name}`, lines: [`${out.updated} of ${out.total} items updated`, ...(out.failed.length ? [`${out.failed.length} could not be matched there`] : [])], cs: {}, status: 'applied', source: 'integration', actor: { kind: 'user', name: auth.user.email }, approved_by: auth.user.email, reason: 'Sent on request', link: '/app/integrations', created_at: at, resolved_at: at }] } },
+              p_changes: { upserts: { actions: [{ id: crypto.randomUUID(), kind: 'sync', risk: 'outbound', title: tr('Sent stock to {0}', out.name), lines: [tr('{0} of {1} items updated', out.updated, out.total), ...(out.failed.length ? [tr('{0} could not be matched there', out.failed.length)] : [])], cs: {}, status: 'applied', source: 'integration', actor: { kind: 'user', name: auth.user.email }, approved_by: auth.user.email, reason: tr('Sent on request'), link: '/app/integrations', created_at: at, resolved_at: at }] } },
             })
             return json(out)
           }

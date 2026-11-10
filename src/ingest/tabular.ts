@@ -1,5 +1,6 @@
 import { normalize } from '~/lib/utils'
 import type { ExtDocument, ExtProduct, IngestBatch } from './types'
+import { tr } from '~/i18n'
 
 /** What a spreadsheet column can mean to Nau. */
 export const FIELDS = ['name', 'sku', 'barcode', 'category', 'unit', 'cost', 'price', 'vat', 'supplier', 'stock', 'location', 'lot', 'expiry', 'qty', 'date', 'doc', 'nif', 'email', 'phone'] as const
@@ -22,28 +23,28 @@ export interface Mapping {
 }
 
 export const FIELD_LABEL: Record<Field, string> = {
-  name: 'Nome do artigo',
-  sku: 'Referência / SKU',
-  barcode: 'Código de barras',
-  category: 'Categoria',
-  unit: 'Unidade',
-  cost: 'Preço de custo',
-  price: 'Preço de venda',
-  vat: 'Taxa de IVA',
-  supplier: 'Fornecedor',
-  stock: 'Stock atual',
-  location: 'Local',
-  lot: 'Lote',
-  expiry: 'Validade',
-  qty: 'Quantidade',
-  date: 'Data',
-  doc: 'N.º do documento',
-  nif: 'NIF',
-  email: 'Email',
-  phone: 'Telefone',
+  name: tr('Nome do artigo'),
+  sku: tr('Referência / SKU'),
+  barcode: tr('Código de barras'),
+  category: tr('Categoria'),
+  unit: tr('Unidade'),
+  cost: tr('Preço de custo'),
+  price: tr('Preço de venda'),
+  vat: tr('Taxa de IVA'),
+  supplier: tr('Fornecedor'),
+  stock: tr('Stock atual'),
+  location: tr('Local'),
+  lot: tr('Lote'),
+  expiry: tr('Validade'),
+  qty: tr('Quantidade'),
+  date: tr('Data'),
+  doc: tr('N.º do documento'),
+  nif: tr('NIF'),
+  email: tr('Email'),
+  phone: tr('Telefone'),
 }
 
-export const KIND_LABEL: Record<SheetKind, string> = { items: 'Artigos e stock', suppliers: 'Fornecedores', sales: 'Histórico de vendas', purchases: 'Histórico de compras' }
+export const KIND_LABEL: Record<SheetKind, string> = { items: tr('Artigos e stock'), suppliers: tr('Fornecedores'), sales: tr('Histórico de vendas'), purchases: tr('Histórico de compras') }
 
 /** Portuguese and English column names seen in exports from Excel, Moloni, PHC, Primavera, Sage, Shopify, WooCommerce and POS software. */
 const SYNONYMS: Record<Field, string[]> = {
@@ -157,7 +158,7 @@ export function tableToBatch(table: Table, mapping: Mapping): { batch: IngestBat
     batch.suppliers = []
     table.rows.forEach((r, i) => {
       const name = get(r, 'name') || get(r, 'supplier')
-      if (!name) return void issues.push({ row: i + 2, message: 'Sem nome' })
+      if (!name) return void issues.push({ row: i + 2, message: tr('Sem nome') })
       batch.suppliers!.push({ name, nif: get(r, 'nif') || null, email: get(r, 'email') || null, phone: get(r, 'phone') || null })
       used++
     })
@@ -170,7 +171,7 @@ export function tableToBatch(table: Table, mapping: Mapping): { batch: IngestBat
       const name = get(r, 'name')
       const sku = get(r, 'sku')
       if (!name && !sku) return
-      if (!name) return void issues.push({ row: i + 2, message: `${sku}: sem nome` })
+      if (!name) return void issues.push({ row: i + 2, message: tr('{0}: sem nome', sku) })
       const rate = vat(r)
       const ref = sku || get(r, 'barcode') || key(name)
       let p = byRef.get(ref)
@@ -183,7 +184,7 @@ export function tableToBatch(table: Table, mapping: Mapping): { batch: IngestBat
       if (qty != null) {
         const expiry = parseDate(get(r, 'expiry'))
         const lot = get(r, 'lot') || (expiry ? `L${expiry.replace(/-/g, '')}` : null)
-        if (qty < 0) issues.push({ row: i + 2, message: `${name}: stock negativo (${qty})` })
+        if (qty < 0) issues.push({ row: i + 2, message: tr('{0}: stock negativo ({1})', name, qty) })
         p.stock!.push({ location: get(r, 'location') || null, qty, lot, expiresOn: expiry })
         if (lot) p.tracksExpiry = true
       }
@@ -201,7 +202,7 @@ export function tableToBatch(table: Table, mapping: Mapping): { batch: IngestBat
     const name = get(r, 'name')
     const sku = get(r, 'sku')
     if (!name && !sku) return
-    if (qty == null || !date) return void issues.push({ row: i + 2, message: `${name || sku}: ${qty == null ? 'sem quantidade' : 'data ilegível'}` })
+    if (qty == null || !date) return void issues.push({ row: i + 2, message: `${name || sku}: ${qty == null ? tr('sem quantidade') : tr('data ilegível')}` })
     const number = get(r, 'doc') || `${mapping.kind === 'sales' ? 'Vendas' : 'Compras'} ${date}`
     const ref = `${mapping.kind}:${number}:${date}`
     let d = docs.get(ref)
@@ -231,7 +232,7 @@ export function toTable(name: string, grid: unknown[][]): Table {
   const at = Math.max(0, rows.findIndex((r) => r.filter(Boolean).length >= Math.max(2, Math.ceil(width * 0.5))))
   const seen = new Map<string, number>()
   const headers = (rows[at] ?? []).map((h, i) => {
-    const base = h || `Coluna ${i + 1}`
+    const base = h || tr('Coluna {0}', i + 1)
     const n = (seen.get(base) ?? 0) + 1
     seen.set(base, n)
     return n > 1 ? `${base} (${n})` : base

@@ -14,6 +14,7 @@ import { Modal } from '~/components/ui/overlay'
 import { Scanner } from '~/components/app/scanner'
 import { useActions } from '~/components/app/actions'
 import { usePageTitle } from '~/components/app/page'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/app/counts/$countId')({ component: CountPage })
 
@@ -22,7 +23,7 @@ function CountPage() {
   const s = useSnapshot()
   const { commit, actor, canWrite, navigate } = useActions()
   const saved = s.counts.find((c) => c.id === countId)
-  usePageTitle(saved?.name ?? 'Count')
+  usePageTitle(saved?.name ?? tr('Count'))
   const [count, setCount] = useState<Count | undefined>(saved)
   const [q, setQ] = useState('')
   const [scan, setScan] = useState(false)
@@ -31,7 +32,7 @@ function CountPage() {
   const items = indexBy(s.items, (i) => i.id)
   const loc = s.locations.find((l) => l.id === count?.locationId)
   const lines = useMemo(() => (count ? count.lines.filter((l) => !q || fuzzyScore(q, items[l.itemId]?.name ?? '') || items[l.itemId]?.sku.toLowerCase().includes(q.toLowerCase())) : []), [count, q, items])
-  if (!count || !saved) return <Empty title="Count not found" />
+  if (!count || !saved) return <Empty title={tr('Count not found')} />
   const readOnly = count.status === 'closed' || !canWrite
   const done = count.lines.filter((l) => l.counted != null).length
   const setLine = (itemId: string, counted: number | null) => setCount((c) => (c ? { ...c, lines: c.lines.map((l) => (l.itemId === itemId ? { ...l, counted } : l)) } : c))
@@ -46,12 +47,12 @@ function CountPage() {
   const varianceValue = round(variances.reduce((a, v) => a + v.value, 0))
   const onScan = (code: string) => {
     const it = s.items.find((i) => i.barcode === code || i.sku.toLowerCase() === code.toLowerCase())
-    if (!it) return toast.error('Not in this count', { description: code })
+    if (!it) return toast.error(tr('Not in this count'), { description: code })
     const line = count.lines.find((l) => l.itemId === it.id)
     if (!line) {
       const next = { ...count, lines: [...count.lines, { itemId: it.id, expected: onHandAt(s, it.id, count.locationId), counted: 1 }] }
       setCount(next)
-      toast(`Added ${it.name}`, { duration: 1200 })
+      toast(tr('Added {0}', it.name), { duration: 1200 })
       return
     }
     setLine(it.id, (line.counted ?? 0) + 1)
@@ -62,20 +63,20 @@ function CountPage() {
     <div className="pb-12">
       <div className="sticky top-0 z-10 flex flex-col gap-3 border-b border-line bg-panel/90 px-5 pt-5 pb-4 backdrop-blur md:px-8">
         <Link to="/app/counts" className="flex w-fit items-center gap-1 text-[12.5px] text-ink-3 hover:text-ink">
-          <ArrowLeftIcon size={12} /> Counts
+          <ArrowLeftIcon size={12} /> {tr('Counts')}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-[19px] font-semibold tracking-[-0.02em] text-ink">{count.name}</h1>
             <p className="mt-0.5 text-[12.5px] text-ink-3">
-              {loc?.name} · {done}/{count.lines.length} counted {count.blind && count.status === 'open' ? '· blind' : ''}
+              {(count.blind && count.status === 'open' ? tr('{0} · {1}/{2} counted · blind', loc?.name, done, count.lines.length) : tr('{0} · {1}/{2} counted ', loc?.name, done, count.lines.length))}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!readOnly && (
               <>
                 <Button icon={<BarcodeIcon size={14} />} onClick={() => setScan((x) => !x)}>
-                  {scan ? 'Hide scanner' : 'Scan'}
+                  {scan ? tr('Hide scanner') : tr('Scan')}
                 </Button>
                 {count.status === 'open' ? (
                   <Button
@@ -87,16 +88,16 @@ function CountPage() {
                       persist(next)
                     }}
                   >
-                    Review
+                    {tr('Review')}
                   </Button>
                 ) : (
                   <Button variant="primary" icon={<CheckIcon size={14} />} onClick={() => setClosing(true)}>
-                    Close &amp; post
+                    {tr('Close & post')}
                   </Button>
                 )}
               </>
             )}
-            {count.status === 'closed' && <Badge tone="ok" dot>Closed</Badge>}
+            {count.status === 'closed' && <Badge tone="ok" dot>{tr('Closed')}</Badge>}
           </div>
         </div>
         <div className="h-1 overflow-hidden rounded-full bg-hover">
@@ -109,13 +110,13 @@ function CountPage() {
         {count.status !== 'open' && (
           <div className="rounded-[14px] bg-surface-2 p-4 shadow-[inset_0_0_0_1px_var(--gray-a3)]">
             <div className="flex items-baseline justify-between">
-              <span className="text-[13px] font-medium text-ink">{variances.length ? `${variances.length} difference${variances.length > 1 ? 's' : ''}` : 'Everything matches'}</span>
+              <span className="text-[13px] font-medium text-ink">{variances.length ? (variances.length > 1 ? tr('{0} differences', variances.length) : tr('{0} difference', variances.length)) : tr('Everything matches')}</span>
               <span className={cn('tabular text-[15px] font-semibold', varianceValue < 0 ? 'text-bad-ink' : varianceValue > 0 ? 'text-ok-ink' : 'text-ink')}>{eur(varianceValue)}</span>
             </div>
-            <p className="mt-1 text-[12px] text-ink-3">Compared against live stock now, so sales made during the count are accounted for.</p>
+            <p className="mt-1 text-[12px] text-ink-3">{tr('Compared against live stock now, so sales made during the count are accounted for.')}</p>
           </div>
         )}
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find an item in this count" aria-label="Filter items" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('Find an item in this count')} aria-label={tr('Filter items')} />
         <ul className="flex flex-col gap-2">
           {lines.map((l) => {
             const it = items[l.itemId]
@@ -130,7 +131,7 @@ function CountPage() {
                   <div className="truncate text-[13.5px] text-ink">{it.name}</div>
                   <div className="text-[11.5px] text-ink-3">
                     <span className="font-mono">{it.sku}</span>
-                    {showExpected && <> · expected {fmtQty(count.status === 'closed' ? l.expected : live, it.unit)}</>}
+                    {showExpected && <> {tr('· expected {0}', fmtQty(count.status === 'closed' ? l.expected : live, it.unit))}</>}
                     {l.counted != null && diff !== 0 && showExpected && <span className={diff < 0 ? 'text-bad-ink' : 'text-ok-ink'}> · {diff > 0 ? '+' : ''}{diff}</span>}
                   </div>
                 </div>
@@ -138,11 +139,11 @@ function CountPage() {
                   <span className="tabular text-[15px] font-medium text-ink">{l.counted ?? '—'}</span>
                 ) : (
                   <div className="flex items-center gap-1">
-                    <button type="button" aria-label="Minus one" onClick={() => setLine(l.itemId, Math.max(0, (l.counted ?? 0) - 1))} className="press flex size-9 items-center justify-center rounded-full bg-hover text-ink">
+                    <button type="button" aria-label={tr('Minus one')} onClick={() => setLine(l.itemId, Math.max(0, (l.counted ?? 0) - 1))} className="press flex size-9 items-center justify-center rounded-full bg-hover text-ink">
                       <MinusIcon size={14} />
                     </button>
-                    <NumberInput value={l.counted ?? null} min={0} onChange={(v) => setLine(l.itemId, v)} onBlur={() => persist(count)} placeholder="—" className="h-9 w-16 text-center text-[15px]" aria-label={`Counted ${it.name}`} />
-                    <button type="button" aria-label="Plus one" onClick={() => setLine(l.itemId, (l.counted ?? 0) + 1)} className="press flex size-9 items-center justify-center rounded-full bg-ink text-inverse">
+                    <NumberInput value={l.counted ?? null} min={0} onChange={(v) => setLine(l.itemId, v)} onBlur={() => persist(count)} placeholder="—" className="h-9 w-16 text-center text-[15px]" aria-label={tr('Counted {0}', it.name)} />
+                    <button type="button" aria-label={tr('Plus one')} onClick={() => setLine(l.itemId, (l.counted ?? 0) + 1)} className="press flex size-9 items-center justify-center rounded-full bg-ink text-inverse">
                       <PlusIcon size={14} />
                     </button>
                   </div>
@@ -153,7 +154,7 @@ function CountPage() {
         </ul>
         {!readOnly && count.status === 'open' && (
           <Button variant="ghost" onClick={() => persist(count)}>
-            Save progress
+            {tr('Save progress')}
           </Button>
         )}
       </div>
@@ -162,23 +163,23 @@ function CountPage() {
         <Modal
           open
           onOpenChange={setClosing}
-          title="Close this count?"
-          description={variances.length ? `${variances.length} difference${variances.length > 1 ? 's' : ''} worth ${eur(varianceValue)} will be posted to the ledger.` : 'Everything matches — the count closes with no changes.'}
+          title={tr('Close this count?')}
+          description={variances.length ? (variances.length > 1 ? tr('{0} differences worth {1} will be posted to the ledger.', variances.length, eur(varianceValue)) : tr('{0} difference worth {1} will be posted to the ledger.', variances.length, eur(varianceValue))) : tr('Everything matches — the count closes with no changes.')}
           size="sm"
           footer={
             <>
               <Button variant="ghost" onClick={() => setClosing(false)}>
-                Keep reviewing
+                {tr('Keep reviewing')}
               </Button>
               <Button
                 variant="primary"
                 onClick={() => {
-                  void commit(closeCount(s, count, actor), { success: 'Count closed', description: variances.length ? `${variances.length} corrections posted` : 'No differences' })
+                  void commit(closeCount(s, count, actor), { success: tr('Count closed'), description: variances.length ? tr('{0} corrections posted', variances.length) : tr('No differences') })
                   setClosing(false)
                   navigate('/app/counts')
                 }}
               >
-                Close &amp; post
+                {tr('Close & post')}
               </Button>
             </>
           }

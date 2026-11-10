@@ -11,11 +11,12 @@ import { Select } from '~/components/ui/form'
 import { Scanner } from '~/components/app/scanner'
 import { useActions } from '~/components/app/actions'
 import { usePageTitle } from '~/components/app/page'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/app/scan')({ component: ScanPage })
 
 function ScanPage() {
-  usePageTitle('Scanner')
+  usePageTitle(tr('Scanner'))
   const s = useSnapshot()
   const { commit, actor, canWrite } = useActions()
   const [code, setCode] = useState<string | null>(null)
@@ -24,17 +25,17 @@ function ScanPage() {
   const st = item ? itemStats(s, item.id) : undefined
   const move = (delta: number, reason: string, type: 'adjustment' | 'waste' = 'adjustment') => {
     if (!item) return
-    void commit(adjustStock(s, { itemId: item.id, locationId: loc, delta, reason, type }, actor), { success: `${delta > 0 ? '+' : ''}${delta} ${item.name}`, undo: adjustStock(s, { itemId: item.id, locationId: loc, delta: -delta, reason: 'Undo' }, actor) })
+    void commit(adjustStock(s, { itemId: item.id, locationId: loc, delta, reason, type }, actor), { success: `${delta > 0 ? '+' : ''}${delta} ${item.name}`, undo: adjustStock(s, { itemId: item.id, locationId: loc, delta: -delta, reason: tr('Undo') }, actor) })
   }
   return (
     <div className="pb-24">
-      <PageHeader title="Scanner" description="Point at a barcode to see stock, demand and price — and fix the count on the spot." />
+      <PageHeader title={tr('Scanner')} description={tr('Point at a barcode to see stock, demand and price — and fix the count on the spot.')} />
       <div className="mx-auto flex max-w-[520px] flex-col gap-4 px-5 py-5">
-        <Select value={loc} onChange={setLoc} options={s.locations.map((l) => ({ value: l.id, label: l.name }))} aria-label="Location" />
+        <Select value={loc} onChange={setLoc} options={s.locations.map((l) => ({ value: l.id, label: l.name }))} aria-label={tr('Location')} />
         <Scanner
           onDetect={(c) => {
             setCode(c)
-            if (!s.items.some((i) => i.barcode === c || i.sku.toLowerCase() === c.toLowerCase())) toast.error('Not in your catalogue', { description: c })
+            if (!s.items.some((i) => i.barcode === c || i.sku.toLowerCase() === c.toLowerCase())) toast.error(tr('Not in your catalogue'), { description: c })
           }}
         />
         {item && st && (
@@ -54,36 +55,36 @@ function ScanPage() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="rounded-[12px] bg-surface-2 p-3">
                 <div className="tabular text-[22px] font-semibold tracking-[-0.03em] text-ink">{fmtQty(onHandAt(s, item.id, loc), item.unit)}</div>
-                <div className="text-[11.5px] text-ink-3">here</div>
+                <div className="text-[11.5px] text-ink-3">{tr('here')}</div>
               </div>
               <div className="rounded-[12px] bg-surface-2 p-3">
                 <div className="tabular text-[22px] font-semibold tracking-[-0.03em] text-ink">{fmtQty(st.onHand, item.unit)}</div>
-                <div className="text-[11.5px] text-ink-3">everywhere</div>
+                <div className="text-[11.5px] text-ink-3">{tr('everywhere')}</div>
               </div>
               <div className="rounded-[12px] bg-surface-2 p-3">
                 <div className="tabular text-[22px] font-semibold tracking-[-0.03em] text-ink">{Number.isFinite(st.cover) ? Math.floor(st.cover) : '—'}</div>
-                <div className="text-[11.5px] text-ink-3">days cover</div>
+                <div className="text-[11.5px] text-ink-3">{tr('days cover')}</div>
               </div>
             </div>
             {canWrite && (
               <div className="grid grid-cols-3 gap-2">
-                <button type="button" onClick={() => move(-1, 'Damaged', 'waste')} className="press flex h-12 items-center justify-center gap-1.5 rounded-[12px] bg-bad-soft text-[13px] font-medium text-bad-ink">
-                  <MinusIcon size={14} /> Write off
+                <button type="button" onClick={() => move(-1, tr('Damaged'), 'waste')} className="press flex h-12 items-center justify-center gap-1.5 rounded-[12px] bg-bad-soft text-[13px] font-medium text-bad-ink">
+                  <MinusIcon size={14} /> {tr('Write off')}
                 </button>
-                <button type="button" onClick={() => move(-1, 'Recount')} className="press flex h-12 items-center justify-center gap-1.5 rounded-[12px] bg-hover text-[13px] font-medium text-ink">
-                  <MinusIcon size={14} /> One less
+                <button type="button" onClick={() => move(-1, tr('Recount'))} className="press flex h-12 items-center justify-center gap-1.5 rounded-[12px] bg-hover text-[13px] font-medium text-ink">
+                  <MinusIcon size={14} /> {tr('One less')}
                 </button>
-                <button type="button" onClick={() => move(1, 'Recount')} className="press flex h-12 items-center justify-center gap-1.5 rounded-[12px] bg-ink text-[13px] font-medium text-inverse">
-                  <PlusIcon size={14} /> One more
+                <button type="button" onClick={() => move(1, tr('Recount'))} className="press flex h-12 items-center justify-center gap-1.5 rounded-[12px] bg-ink text-[13px] font-medium text-inverse">
+                  <PlusIcon size={14} /> {tr('One more')}
                 </button>
               </div>
             )}
             <Link to="/app/items/$itemId" params={{ itemId: item.id }} className="flex items-center justify-center gap-1.5 text-[13px] text-ink-3 hover:text-ink">
-              Open item <ArrowRightIcon size={12} />
+              {tr('Open item')} <ArrowRightIcon size={12} />
             </Link>
           </div>
         )}
-        <p className="text-center text-[12px] text-ink-4">Tip: add Nau to your home screen — it opens straight to the app, full screen.</p>
+        <p className="text-center text-[12px] text-ink-4">{tr('Tip: add Nau to your home screen — it opens straight to the app, full screen.')}</p>
       </div>
     </div>
   )

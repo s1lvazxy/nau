@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Mark } from '~/components/brand/logo'
 import { useSession } from '~/data/store'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/auth/callback')({
   ssr: false,
@@ -23,12 +24,12 @@ function Callback() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 text-center">
       <Mark size={28} working className="text-ink" />
-      <p className="text-[14px] text-ink-3">Signing you in…</p>
+      <p className="text-[14px] text-ink-3">{tr('Signing you in…')}</p>
       {slow && (
         <p className="text-[13px] text-ink-4">
-          Taking longer than usual.{' '}
+          {tr('Taking longer than usual.')}
           <Link to="/login" className="underline underline-offset-2">
-            Back to sign in
+            {tr('Back to sign in')}
           </Link>
         </p>
       )}

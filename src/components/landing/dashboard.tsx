@@ -1,3 +1,4 @@
+import { LANDING_ONLY, href } from '~/lib/site'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { CheckIcon, PlusIcon, SlidersHorizontalIcon } from '@phosphor-icons/react'
@@ -12,6 +13,7 @@ import { createDemoSnapshot } from '~/lib/seed'
 import type { Dashboard, Snapshot } from '~/lib/types'
 import { cn } from '~/lib/utils'
 import { Rule, gsap, useGSAP } from './frame'
+import { tr } from '~/i18n'
 
 /** The real dashboard, laid back like a chart table. It stands up as you reach it, then it is yours to use. */
 export function DashboardSection() {
@@ -98,10 +100,13 @@ export function DashboardSection() {
     () => ({
       commit: async (cs: Parameters<typeof applyChangeSet>[1], opts?: { success?: string }) => {
         setSnap((s) => (s ? applyChangeSet(s, cs) : s))
-        if (opts?.success) toast.success(opts.success, { description: 'É só a demo — nada foi enviado.' })
+        if (opts?.success) toast.success(opts.success, { description: tr('É só a demo — nada foi enviado.') })
       },
       actor: { kind: 'user' as const, name: 'Inês Marques' },
-      navigate: () => toast('Isso abre na demo ao vivo', { description: 'Tudo o que vês aqui também funciona lá — sem registo.', action: { label: 'Abrir demo', onClick: () => (window.location.href = '/demo') } }),
+      navigate: () =>
+        LANDING_ONLY
+          ? toast(tr('Isso abre na aplicação'), { description: tr('Instala o Nau para ver: são três linhas.'), action: { label: tr('Instalar'), onClick: () => document.querySelector('#install')?.scrollIntoView({ behavior: 'smooth' }) } })
+          : toast(tr('Isso abre na demo ao vivo'), { description: tr('Tudo o que vês aqui também funciona lá — sem registo.'), action: { label: tr('Abrir demo'), onClick: () => (window.location.href = href('/demo')) } }),
       canWrite: true,
       demo: true,
     }),
@@ -118,10 +123,10 @@ export function DashboardSection() {
       <div className="sticky top-0 z-0 flex h-[66svh] min-h-[440px] items-center justify-center px-6 pt-[72px] text-center">
         <div data-dash-words className="flex flex-col items-center will-change-transform">
           <h2 id="dash-title" data-lines className="max-w-[14ch] text-[clamp(2.5rem,5.6vw,5rem)] leading-[1] font-medium tracking-[-0.04em] text-white">
-            O teu painel, <span className="text-white/38">à tua maneira.</span>
+            {tr('O teu painel,')} <span className="text-white/38">{tr('à tua maneira.')}</span>
           </h2>
           <p data-reveal className="mt-6 max-w-[44ch] text-[16px] leading-[1.65] text-white/58">
-            Arrasta, redimensiona ou descreve o widget que queres. Este é o verdadeiro — carrega em Personalizar.
+            {tr('Arrasta, redimensiona ou descreve o widget que queres. Este é o verdadeiro — carrega em Personalizar.')}
           </p>
         </div>
       </div>
@@ -134,18 +139,18 @@ export function DashboardSection() {
             <div className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="flex items-center gap-2.5">
                 <AppIcon size={24} />
-                <span className="text-[13px] font-medium text-ink">Casa Ribeira</span>
+                <span className="text-[13px] font-medium text-ink">{tr('Casa Ribeira')}</span>
               </div>
-              <Segmented size="sm" value={String(tab)} onChange={(v) => setTab(Number(v))} options={[{ value: '0', label: 'Visão geral' }, { value: '1', label: 'Armazém' }]} />
+              <Segmented size="sm" value={String(tab)} onChange={(v) => setTab(Number(v))} options={[{ value: '0', label: tr('Visão geral') }, { value: '1', label: tr('Armazém') }]} />
               <div className="ml-auto flex flex-wrap items-center gap-2">
                 {editing && (
                   <button type="button" onClick={() => setGallery(true)} className={buttonClass({ variant: 'secondary', size: 'sm' })}>
-                    <PlusIcon size={13} /> Adicionar widget
+                    <PlusIcon size={13} /> {tr('Adicionar widget')}
                   </button>
                 )}
                 <button type="button" onClick={() => setEditing((e) => !e)} className={buttonClass({ variant: editing ? 'primary' : 'secondary', size: 'sm' })}>
                   {editing ? <CheckIcon size={13} /> : <SlidersHorizontalIcon size={13} />}
-                  {editing ? 'Concluído' : 'Personalizar'}
+                  {editing ? tr('Concluído') : tr('Personalizar')}
                 </button>
               </div>
             </div>

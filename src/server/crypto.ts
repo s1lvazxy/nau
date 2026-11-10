@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { tr } from '~/i18n'
 
 /**
  * Secrets at rest (connector credentials) are sealed with AES-256-GCM under NAU_SECRET_KEY.
@@ -6,9 +7,9 @@ import crypto from 'node:crypto'
  */
 function key(): Buffer {
   const raw = process.env.NAU_SECRET_KEY
-  if (!raw) throw new Error('NAU_SECRET_KEY is not set. Connectors need it to keep credentials encrypted.')
+  if (!raw) throw new Error(tr('NAU_SECRET_KEY is not set. Connectors need it to keep credentials encrypted.'))
   const buf = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, 'hex') : Buffer.from(raw, 'base64')
-  if (buf.length !== 32) throw new Error('NAU_SECRET_KEY must be 32 bytes (base64 or hex).')
+  if (buf.length !== 32) throw new Error(tr('NAU_SECRET_KEY must be 32 bytes (base64 or hex).'))
   return buf
 }
 
@@ -31,14 +32,14 @@ export function seal(value: unknown): string {
 export function open<T = Record<string, string>>(sealed: string | null | undefined): T {
   if (!sealed) return {} as T
   const [v, iv, tag, body] = sealed.split('.')
-  if (v !== 'v1' || !iv || !tag || !body) throw new Error('Unreadable secret')
+  if (v !== 'v1' || !iv || !tag || !body) throw new Error(tr('Unreadable secret'))
   const d = crypto.createDecipheriv('aes-256-gcm', key(), Buffer.from(iv, 'base64url'))
   d.setAuthTag(Buffer.from(tag, 'base64url'))
   try {
     return JSON.parse(Buffer.concat([d.update(Buffer.from(body, 'base64url')), d.final()]).toString('utf8')) as T
   } catch {
     // The key changed since this was sealed: say so instead of surfacing a cipher error
-    throw new Error('The stored credentials can’t be read with the current NAU_SECRET_KEY. Reconnect this system.')
+    throw new Error(tr('The stored credentials can’t be read with the current NAU_SECRET_KEY. Reconnect this system.'))
   }
 }
 

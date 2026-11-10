@@ -16,10 +16,11 @@ import { usePageTitle } from '~/components/app/page'
 import { useOperator } from '~/agent/operator'
 import { useOperatorEnv } from '~/components/app/operator-panel'
 import { Mark } from '~/components/brand/logo'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/app/items/$itemId')({ component: ItemPage })
 
-const TYPE_LABEL: Record<string, string> = { receipt: 'Received', sale: 'Sold', adjustment: 'Adjusted', transfer: 'Transfer', count: 'Count', waste: 'Write-off', return: 'Returned' }
+const TYPE_LABEL: Record<string, string> = { receipt: tr('Received'), sale: tr('Sold'), adjustment: tr('Adjusted'), transfer: tr('Transfer'), count: tr('Count'), waste: tr('Write-off'), return: tr('Returned') }
 
 function ItemPage() {
   const { itemId } = Route.useParams()
@@ -29,12 +30,12 @@ function ItemPage() {
   const env = useOperatorEnv()
   const item = s.items.find((i) => i.id === itemId)
   const st = item ? itemStats(s, item.id) : undefined
-  usePageTitle(item?.name ?? 'Item')
+  usePageTitle(item?.name ?? tr('Item'))
   const [adjust, setAdjust] = useState<string | null>(null)
   const [transfer, setTransfer] = useState(false)
   const [edit, setEdit] = useState(false)
   const [days, setDays] = useState(28)
-  if (!item) return <Empty title="Item not found">It may have been deleted.</Empty>
+  if (!item) return <Empty title={tr('Item not found')}>{tr('It may have been deleted.')}</Empty>
   const sup = s.suppliers.find((x) => x.id === item.supplierId)
   const cat = s.categories.find((c) => c.id === item.categoryId)
   const locs = indexBy(s.locations, (l) => l.id)
@@ -50,13 +51,13 @@ function ItemPage() {
   const orderNow = () => {
     if (!sup || !st) return
     const { cs, po } = createPO(s, { supplierId: sup.id, lines: [{ itemId: item.id, qty: Math.max(st.suggestedQty, item.reorderQty ?? 1, 1), unitCost: st.lastReceiptCost ?? item.cost }] }, actor)
-    void commit(cs, { success: `${po.number} drafted` }).then(() => navigate({ to: '/app/orders/$orderId', params: { orderId: po.id } }))
+    void commit(cs, { success: tr('{0} drafted', po.number) }).then(() => navigate({ to: '/app/orders/$orderId', params: { orderId: po.id } }))
   }
   return (
     <div className="pb-10">
       <div className="flex flex-col gap-4 border-b border-line px-5 pt-5 pb-5 md:px-8">
         <Link to="/app/items" className="flex w-fit items-center gap-1 text-[12.5px] text-ink-3 hover:text-ink">
-          <ArrowLeftIcon size={12} /> Items
+          <ArrowLeftIcon size={12} /> {tr('Items')}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3.5">
@@ -72,7 +73,7 @@ function ItemPage() {
                     {STATUS_META[st.status].label}
                   </Badge>
                 )}
-                {item.archived && <Badge tone="muted">Archived</Badge>}
+                {item.archived && <Badge tone="muted">{tr('Archived')}</Badge>}
                 {item.tags.map((t) => (
                   <Badge key={t} tone="neutral">
                     {t}
@@ -82,32 +83,32 @@ function ItemPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button icon={<Mark size={13} className="text-accent" />} onClick={() => ask(`Tell me about ${item.name}: is the stock right, and what should I do?`)}>
-              Ask Operator
+            <Button icon={<Mark size={13} className="text-accent" />} onClick={() => ask(tr('Tell me about {0}: is the stock right, and what should I do?', item.name))}>
+              {tr('Ask Operator')}
             </Button>
             {canWrite && (
               <>
                 <Button icon={<SlidersHorizontalIcon size={14} />} onClick={() => setAdjust(s.locations.find((l) => l.isDefault)?.id ?? s.locations[0].id)}>
-                  Adjust
+                  {tr('Adjust')}
                 </Button>
                 {s.locations.length > 1 && (
                   <Button icon={<ArrowsLeftRightIcon size={14} />} onClick={() => setTransfer(true)}>
-                    Transfer
+                    {tr('Transfer')}
                   </Button>
                 )}
                 <Button variant="primary" icon={<PencilSimpleIcon size={14} />} onClick={() => setEdit(true)}>
-                  Edit
+                  {tr('Edit')}
                 </Button>
                 <Menu
                   triggerClassName="flex size-8 items-center justify-center rounded-[8px] text-ink-2 hover:bg-hover"
                   trigger={<DotsThreeIcon size={16} weight="bold" />}
                   items={[
-                    { label: 'Order now', icon: <TruckIcon size={14} />, disabled: !sup, onSelect: orderNow },
+                    { label: tr('Order now'), icon: <TruckIcon size={14} />, disabled: !sup, onSelect: orderNow },
                     {
-                      label: 'Count this item',
+                      label: tr('Count this item'),
                       icon: <ClipboardTextIcon size={14} />,
                       onSelect: () => {
-                        const { cs, count } = startCount(s, { name: `${item.name} — spot count`, locationId: s.locations.find((l) => l.isDefault)?.id ?? s.locations[0].id, itemIds: [item.id] }, actor)
+                        const { cs, count } = startCount(s, { name: tr('{0} — spot count', item.name), locationId: s.locations.find((l) => l.isDefault)?.id ?? s.locations[0].id, itemIds: [item.id] }, actor)
                         void commit(cs).then(() => navigate({ to: '/app/counts/$countId', params: { countId: count.id } }))
                       },
                     },
@@ -121,12 +122,12 @@ function ItemPage() {
 
       {st && (
         <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-b border-line px-5 py-5 sm:grid-cols-3 md:px-8 lg:grid-cols-6">
-          <Stat label="On hand" value={fmtQty(st.onHand, item.unit)} sub={st.onOrder ? `+${num(st.onOrder)} on order` : undefined} />
-          <Stat label="Days of cover" value={Number.isFinite(st.cover) ? (st.cover < 1 ? '<1' : Math.floor(st.cover)) : '—'} sub={`lead time ${st.leadTime} d`} />
-          <Stat label="Sells per day" value={num(st.daily, 1)} sub={st.trend ? `${signed(Math.round(st.trend * 100))}% vs prior 2 wks` : 'steady'} />
-          <Stat label="Stock value" value={eur(st.value, { decimals: 0 })} sub={`${eur(st.retailValue, { decimals: 0 })} retail`} />
-          <Stat label="Gross margin" value={pct(st.margin)} sub={`${eur(item.cost)} cost · ${eur(item.price)} price`} />
-          <Stat label="Reorder point" value={fmtQty(st.reorderPoint, item.unit)} sub={item.reorderPoint == null ? `automatic · ABC ${st.abc}` : `manual · ABC ${st.abc}`} />
+          <Stat label={tr('On hand')} value={fmtQty(st.onHand, item.unit)} sub={st.onOrder ? tr('+{0} on order', num(st.onOrder)) : undefined} />
+          <Stat label={tr('Days of cover')} value={Number.isFinite(st.cover) ? (st.cover < 1 ? '<1' : Math.floor(st.cover)) : '—'} sub={tr('lead time {0} d', st.leadTime)} />
+          <Stat label={tr('Sells per day')} value={num(st.daily, 1)} sub={st.trend ? tr('{0}% vs prior 2 wks', signed(Math.round(st.trend * 100))) : 'steady'} />
+          <Stat label={tr('Stock value')} value={eur(st.value, { decimals: 0 })} sub={`${eur(st.retailValue, { decimals: 0 })} retail`} />
+          <Stat label={tr('Gross margin')} value={pct(st.margin)} sub={tr('{0} cost · {1} price', eur(item.cost), eur(item.price))} />
+          <Stat label={tr('Reorder point')} value={fmtQty(st.reorderPoint, item.unit)} sub={item.reorderPoint == null ? `automatic · ABC ${st.abc}` : `manual · ABC ${st.abc}`} />
         </div>
       )}
 
@@ -135,14 +136,14 @@ function ItemPage() {
           <Card className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-[14px] font-medium text-ink">Projected stock</h2>
+                <h2 className="text-[14px] font-medium text-ink">{tr('Projected stock')}</h2>
                 <p className="mt-0.5 text-[12.5px] text-ink-3">
                   {stockout ? (
                     <>
-                      Runs out around <span className="font-medium text-bad-ink">{date(stockout.day, 'long')}</span> at the current pace.
+                      {tr('Runs out around')} <span className="font-medium text-bad-ink">{date(stockout.day, 'long')}</span> {tr('at the current pace.')}
                     </>
                   ) : (
-                    <>Covered for the next {days} days, including deliveries on the way.</>
+                    <>{tr('Covered for the next {0} days, including deliveries on the way.', days)}</>
                   )}
                 </p>
               </div>
@@ -154,18 +155,18 @@ function ItemPage() {
                 ))}
               </div>
             </div>
-            <AreaChart className="mt-4" height={220} data={p.map((d) => ({ label: d.day, value: d.level, secondary: d.units, marker: d.holiday ?? (d.incoming ? `+${d.incoming} arriving` : undefined) }))} xFormat={(l) => date(l, 'short')} format={(v) => num(v)} primaryLabel="Stock" secondaryLabel="Demand" threshold={st ? { value: st.reorderPoint, label: 'reorder point' } : undefined} />
+            <AreaChart className="mt-4" height={220} data={p.map((d) => ({ label: d.day, value: d.level, secondary: d.units, marker: d.holiday ?? (d.incoming ? `+${d.incoming} arriving` : undefined) }))} xFormat={(l) => date(l, 'short')} format={(v) => num(v)} primaryLabel={tr('Stock')} secondaryLabel={tr('Demand')} threshold={st ? { value: st.reorderPoint, label: tr('reorder point') } : undefined} />
           </Card>
 
           <Card className="overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <h2 className="text-[14px] font-medium text-ink">Ledger</h2>
+              <h2 className="text-[14px] font-medium text-ink">{tr('Ledger')}</h2>
               <Link to="/app/movements" search={{ item: item.id }} className="text-[12.5px] text-ink-3 hover:text-ink">
-                All movements
+                {tr('All movements')}
               </Link>
             </div>
             {moves.length === 0 ? (
-              <p className="px-5 pb-5 text-[13px] text-ink-3">No movements yet.</p>
+              <p className="px-5 pb-5 text-[13px] text-ink-3">{tr('No movements yet.')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-[12.5px]">
@@ -182,11 +183,11 @@ function ItemPage() {
                         <td className="truncate py-2 text-ink-3">{m.actor.name}</td>
                         <td className="w-24 py-2 pr-4 text-right">
                           {canWrite && m.type !== 'sale' && !m.revertsId && !reverted.has(m.id) && (
-                            <button type="button" onClick={() => void commit(revertMovement(s, m.id, actor), { success: 'Reverted' })} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] text-ink-3 opacity-0 group-hover:opacity-100 hover:bg-hover hover:text-ink focus-visible:opacity-100">
-                              <ArrowCounterClockwiseIcon size={11} /> Revert
+                            <button type="button" onClick={() => void commit(revertMovement(s, m.id, actor), { success: tr('Reverted') })} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] text-ink-3 opacity-0 group-hover:opacity-100 hover:bg-hover hover:text-ink focus-visible:opacity-100">
+                              <ArrowCounterClockwiseIcon size={11} /> {tr('Revert')}
                             </button>
                           )}
-                          {reverted.has(m.id) && <span className="text-[11.5px] text-ink-4">reverted</span>}
+                          {reverted.has(m.id) && <span className="text-[11.5px] text-ink-4">{tr('reverted')}</span>}
                         </td>
                       </tr>
                     ))}
@@ -199,7 +200,7 @@ function ItemPage() {
 
         <div className="flex flex-col gap-4">
           <Card className="p-5">
-            <h2 className="text-[14px] font-medium text-ink">By location</h2>
+            <h2 className="text-[14px] font-medium text-ink">{tr('By location')}</h2>
             <ul className="mt-3 flex flex-col">
               {s.locations.map((l) => {
                 const q = st?.byLocation[l.id] ?? 0
@@ -216,7 +217,7 @@ function ItemPage() {
                       </div>
                     </div>
                     {canWrite && (
-                      <button type="button" onClick={() => setAdjust(l.id)} aria-label={`Adjust at ${l.name}`} className="flex size-7 items-center justify-center rounded-md text-ink-3 opacity-0 group-hover:opacity-100 hover:bg-hover hover:text-ink focus-visible:opacity-100">
+                      <button type="button" onClick={() => setAdjust(l.id)} aria-label={tr('Adjust at {0}', l.name)} className="flex size-7 items-center justify-center rounded-md text-ink-3 opacity-0 group-hover:opacity-100 hover:bg-hover hover:text-ink focus-visible:opacity-100">
                         <SlidersHorizontalIcon size={13} />
                       </button>
                     )}
@@ -228,9 +229,9 @@ function ItemPage() {
 
           {item.tracksExpiry && (
             <Card className="p-5">
-              <h2 className="text-[14px] font-medium text-ink">Lots · first expired, first out</h2>
+              <h2 className="text-[14px] font-medium text-ink">{tr('Lots · first expired, first out')}</h2>
               {lots.length === 0 ? (
-                <p className="mt-2 text-[13px] text-ink-3">No lots in stock.</p>
+                <p className="mt-2 text-[13px] text-ink-3">{tr('No lots in stock.')}</p>
               ) : (
                 <ul className="mt-3 flex flex-col">
                   {lots.map((b) => {
@@ -252,7 +253,7 @@ function ItemPage() {
           )}
 
           <Card className="p-5">
-            <h2 className="text-[14px] font-medium text-ink">Supplier</h2>
+            <h2 className="text-[14px] font-medium text-ink">{tr('Supplier')}</h2>
             {sup ? (
               <div className="mt-3 flex flex-col gap-2 text-[13px]">
                 <Link to="/app/suppliers" className="font-medium text-ink hover:underline">
@@ -260,30 +261,30 @@ function ItemPage() {
                 </Link>
                 <div className="grid grid-cols-2 gap-2 text-[12.5px]">
                   <div>
-                    <div className="text-ink-3">Lead time</div>
-                    <div className="tabular text-ink">{sup.leadTimeDays} days</div>
+                    <div className="text-ink-3">{tr('Lead time')}</div>
+                    <div className="tabular text-ink">{tr('{0} days', sup.leadTimeDays)}</div>
                   </div>
                   <div>
-                    <div className="text-ink-3">Minimum order</div>
+                    <div className="text-ink-3">{tr('Minimum order')}</div>
                     <div className="tabular text-ink">{eur(sup.minOrderValue, { decimals: 0 })}</div>
                   </div>
                   <div>
-                    <div className="text-ink-3">Last cost</div>
+                    <div className="text-ink-3">{tr('Last cost')}</div>
                     <div className="tabular text-ink">{st?.lastReceiptCost ? eur(st.lastReceiptCost) : '—'}</div>
                   </div>
                   <div>
-                    <div className="text-ink-3">Last sale</div>
-                    <div className="text-ink">{st?.lastSaleAt ? relative(st.lastSaleAt) : 'never'}</div>
+                    <div className="text-ink-3">{tr('Last sale')}</div>
+                    <div className="text-ink">{st?.lastSaleAt ? relative(st.lastSaleAt) : tr('never')}</div>
                   </div>
                 </div>
                 {canWrite && st && st.suggestedQty > 0 && (
                   <Button size="sm" className="mt-2 w-full" icon={<TruckIcon size={13} />} onClick={orderNow}>
-                    Draft an order for {fmtQty(st.suggestedQty, item.unit)}
+                    {tr('Draft an order for {0}', fmtQty(st.suggestedQty, item.unit))}
                   </Button>
                 )}
               </div>
             ) : (
-              <p className="mt-2 text-[13px] text-ink-3">No supplier set. Add one so Nau can size orders.</p>
+              <p className="mt-2 text-[13px] text-ink-3">{tr('No supplier set. Add one so Nau can size orders.')}</p>
             )}
           </Card>
         </div>

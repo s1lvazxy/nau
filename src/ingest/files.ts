@@ -1,5 +1,6 @@
 import { toTable, type Table } from './tabular'
 import { saftToBatch, type SaftSummary } from './saft'
+import { tr } from '~/i18n'
 
 /** Old Portuguese software still exports Windows-1252. Try UTF-8 strictly and fall back, so “Descrição” survives. */
 export function decodeText(buf: ArrayBuffer): string {
@@ -55,24 +56,24 @@ export async function readFile(file: File): Promise<ReadFile> {
   const name = file.name
   const ext = name.toLowerCase().split('.').pop() ?? ''
   try {
-    if (file.size > MAX) return { kind: 'error', name, error: 'O ficheiro tem mais de 60 MB. Exporta um período mais curto.' }
+    if (file.size > MAX) return { kind: 'error', name, error: tr('O ficheiro tem mais de 60 MB. Exporta um período mais curto.') }
     if (file.type.startsWith('image/') || ext === 'pdf' || ['jpg', 'jpeg', 'png', 'webp', 'heic'].includes(ext)) {
-      if (ext === 'heic') return { kind: 'error', name, error: 'Fotos HEIC ainda não abrem aqui. No iPhone, partilha como JPEG ou tira um ecrã.' }
+      if (ext === 'heic') return { kind: 'error', name, error: tr('Fotos HEIC ainda não abrem aqui. No iPhone, partilha como JPEG ou tira um ecrã.') }
       return { kind: 'photo', name, file }
     }
     if (ext === 'xlsx') {
       const { default: readExcelFile } = await import('read-excel-file/browser')
       const sheets = (await readExcelFile(file)) as unknown as { sheet: string; data: unknown[][] }[]
       const tables = sheets.map((s) => toTable(sheets.length > 1 ? `${name} · ${s.sheet}` : name, s.data)).filter((t) => t.rows.length && t.headers.length > 1)
-      return tables.length ? { kind: 'tables', name, tables } : { kind: 'error', name, error: 'Não encontrámos uma tabela neste ficheiro.' }
+      return tables.length ? { kind: 'tables', name, tables } : { kind: 'error', name, error: tr('Não encontrámos uma tabela neste ficheiro.') }
     }
-    if (ext === 'xls') return { kind: 'error', name, error: 'Este é o formato antigo do Excel (.xls). Abre-o e guarda como .xlsx ou .csv.' }
+    if (ext === 'xls') return { kind: 'error', name, error: tr('Este é o formato antigo do Excel (.xls). Abre-o e guarda como .xlsx ou .csv.') }
     const text = decodeText(await file.arrayBuffer())
     if (ext === 'xml' || /^\s*<\?xml|<AuditFile/.test(text.slice(0, 2000))) return { kind: 'saft', name, summary: saftToBatch(text) }
     const table = toTable(name, csvGrid(text))
-    return table.rows.length && table.headers.length > 1 ? { kind: 'tables', name, tables: [table] } : { kind: 'error', name, error: 'Não encontrámos uma tabela neste ficheiro.' }
+    return table.rows.length && table.headers.length > 1 ? { kind: 'tables', name, tables: [table] } : { kind: 'error', name, error: tr('Não encontrámos uma tabela neste ficheiro.') }
   } catch (e) {
-    return { kind: 'error', name, error: e instanceof Error ? e.message : 'Não conseguimos ler este ficheiro.' }
+    return { kind: 'error', name, error: e instanceof Error ? e.message : tr('Não conseguimos ler este ficheiro.') }
   }
 }
 
@@ -80,7 +81,7 @@ export function fileToBase64(file: File): Promise<string> {
   return new Promise((ok, fail) => {
     const fr = new FileReader()
     fr.onload = () => ok(String(fr.result).split(',')[1] ?? '')
-    fr.onerror = () => fail(new Error('Não conseguimos ler o ficheiro.'))
+    fr.onerror = () => fail(new Error(tr('Não conseguimos ler o ficheiro.')))
     fr.readAsDataURL(file)
   })
 }

@@ -2,14 +2,20 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Logo, Mark } from '~/components/brand/logo'
 import { GlassRose } from '~/components/landing/rose/glass-rose'
+import { LangSwitch } from '~/components/lang-switch'
+import { locale, tr } from '~/i18n'
+import { home } from '~/lib/site'
 
 export function AuthShell({ title, subtitle, children, footer, palette = 'dawn' }: { title: ReactNode; subtitle?: ReactNode; children: ReactNode; footer?: ReactNode; palette?: 'dawn' | 'dusk' | 'morning' }) {
   return (
-    <div lang="pt-PT" className="dark grid min-h-dvh bg-[#0a0a0a] text-ink lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]" style={{ colorScheme: 'dark' }}>
+    <div lang={locale()} className="dark grid min-h-dvh bg-[#0a0a0a] text-ink lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]" style={{ colorScheme: 'dark' }}>
       <div className="flex flex-col px-6 py-6 sm:px-10">
-        <Link to="/" className="w-fit" aria-label="Nau — início">
-          <Logo size={20} />
-        </Link>
+        <div className="flex items-center justify-between">
+          <a href={home()} className="w-fit" aria-label={tr('Nau — início')}>
+            <Logo size={20} />
+          </a>
+          <LangSwitch />
+        </div>
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-[360px]">
             <h1 className="font-display text-[30px] leading-tight font-medium tracking-[-0.035em] text-ink">{title}</h1>
@@ -19,13 +25,13 @@ export function AuthShell({ title, subtitle, children, footer, palette = 'dawn' 
           </div>
         </div>
         <p className="text-[12px] text-ink-4">
-          Ao continuar, aceitas os{' '}
+          {tr('Ao continuar, aceitas os')}
           <Link to="/legal/$doc" params={{ doc: 'terms' }} className="underline underline-offset-2 hover:text-ink-2">
-            Termos
+            {tr('Termos')}
           </Link>{' '}
           e a{' '}
           <Link to="/legal/$doc" params={{ doc: 'privacy' }} className="underline underline-offset-2 hover:text-ink-2">
-            Política de privacidade
+            {tr('Política de privacidade')}
           </Link>
           .
         </p>
@@ -35,21 +41,21 @@ export function AuthShell({ title, subtitle, children, footer, palette = 'dawn' 
         <div className="absolute inset-0 flex flex-col justify-end p-10">
           <div className="max-w-[420px] rounded-[20px] bg-[#141414]/72 p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.06),0_40px_90px_-24px_rgb(0_0_0/0.95)] backdrop-blur-2xl">
             <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
-              <Mark size={14} /> Resumo da manhã · 07:30
+              <Mark size={14} /> {tr('Resumo da manhã · 07:30')}
             </div>
-            <p className="mt-3 text-[18px] leading-snug font-medium tracking-[-0.02em] text-ink">Bom dia. As vendas subiram 8% face à semana passada — e há duas encomendas prontas para ti.</p>
+            <p className="mt-3 text-[18px] leading-snug font-medium tracking-[-0.02em] text-ink">{tr('Bom dia. As vendas subiram 8% face à semana passada — e há duas encomendas prontas para ti.')}</p>
             <ul className="mt-4 flex flex-col gap-2 text-[13px] text-ink-3">
               <li className="flex gap-2">
                 <span className="mt-1.5 size-1.5 rounded-full bg-[var(--amber-9)]" />
-                O Alvarinho acaba na sexta, antes do Santo António.
+                {tr('O Alvarinho acaba na sexta, antes do Santo António.')}
               </li>
               <li className="flex gap-2">
                 <span className="mt-1.5 size-1.5 rounded-full bg-[var(--grass-9)]" />
-                Cápsulas reequilibradas para o Príncipe Real durante a noite.
+                {tr('Cápsulas reequilibradas para o Príncipe Real durante a noite.')}
               </li>
               <li className="flex gap-2">
                 <span className="mt-1.5 size-1.5 rounded-full bg-[var(--blue-9)]" />
-                A Torrefação Lusa entrega hoje antes das 11:00.
+                {tr('A Torrefação Lusa entrega hoje antes das 11:00.')}
               </li>
             </ul>
           </div>

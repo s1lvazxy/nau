@@ -7,6 +7,7 @@ import { isCloudConfigured } from '~/lib/env'
 import type { Backend, WorkspaceRef } from './backend'
 import { createLocalBackend, ensureDemo } from './local'
 import { applyChangeSet, isEmpty, type ChangeSet } from './changeset'
+import { tr } from '~/i18n'
 
 const MODE_KEY = 'nau:mode'
 const WS_KEY = 'nau:workspace'
@@ -135,7 +136,7 @@ export const SnapshotContext = createContext<Snapshot | null>(null)
 
 export function useSnapshot(): Snapshot {
   const s = useContext(SnapshotContext)
-  if (!s) throw new Error('useSnapshot must be used inside the app shell')
+  if (!s) throw new Error(tr('useSnapshot must be used inside the app shell'))
   return s
 }
 
@@ -157,7 +158,7 @@ export function useCommit() {
             description: opts.description,
             action: opts.undo
               ? {
-                  label: 'Undo',
+                  label: tr('Undo'),
                   onClick: () => {
                     const cur = qc.getQueryData<Snapshot>(key)
                     if (cur) qc.setQueryData(key, applyChangeSet(cur, opts.undo!))
@@ -169,7 +170,7 @@ export function useCommit() {
         if (backend.mode === 'cloud') void qc.invalidateQueries({ queryKey: key })
       } catch (e) {
         if (prev) qc.setQueryData(key, prev)
-        toast.error('That didn’t save', { description: e instanceof Error ? e.message : String(e) })
+        toast.error(tr('That didn’t save'), { description: e instanceof Error ? e.message : String(e) })
         throw e
       }
     },

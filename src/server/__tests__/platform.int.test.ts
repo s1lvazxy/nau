@@ -6,11 +6,12 @@ import { createClient } from '@supabase/supabase-js'
 import { createCloudBackend } from '~/data/cloud'
 import { createEmptySnapshot } from '~/lib/seed'
 import { undoAction } from '~/agent/policy'
-import { onHandTotal } from '~/data/commands'
+import { createPO, onHandTotal, queueEmail, sendPO } from '~/data/commands'
 import { requireMember } from '../auth'
 import { readV1, writeV1 } from '../api-v1'
 import { sha256 } from '../crypto'
-import { admin, load } from '../db'
+import { admin, commit, load } from '../db'
+import { deliverOrderEmails } from '../mail'
 import { connect, list, pushStock, sync } from '../integrations'
 import { runWorkspace, type Ask } from '../agent-run'
 import { tick } from '../tick'
@@ -205,4 +206,71 @@ run('open platform against local Supabase', () => {
     const s = await load(wsId)
     expect(s.movements.some((m) => m.ref === '#902')).toBe(true)
   }, 90000)
+
+  it('emails a sent order through Resend once, records why a failure failed, and leaves drafts alone', async () => {
+    process.env.RESEND_API_KEY = 're_test_key'
+    process.env.NAU_MAIL_FROM = 'Compras <compras@loja.test>'
+    const calls: { headers: Record<string, string>; body: any }[] = []
+    let answer: () => Response = () => new Response(JSON.stringify({ id: 'email_1' }), { status: 200, headers: { 'content-type': 'application/json' } })
+    const real = globalThis.fetch
+    vi.stubGlobal('fetch', (input: any, init?: RequestInit) => {
+      if (String(input) !== 'https://api.resend.com/emails') return real(input, init)
+      calls.push({ headers: Object.fromEntries(new Headers(init?.headers).entries()), body: JSON.parse(String(init?.body)) })
+      return Promise.resolve(answer())
+    })
+    try {
+      let s = await load(wsId)
+      const supplier = { ...s.suppliers[0], email: 'paulo@quinta.test' }
+      const item = s.items[0]
+      const lines = [{ itemId: item.id, qty: 6, unitCost: 4 }]
+      const draft = createPO({ ...s, suppliers: [supplier] }, { supplierId: supplier.id, lines }, { kind: 'user', name: 'Rita Teste' })
+      await commit(wsId, { ...draft.cs, upserts: { ...draft.cs.upserts, suppliers: [supplier] } })
+
+      // A queued flag on a draft is not an order to send
+      await commit(wsId, { upserts: { orders: [{ ...draft.po, ...queueEmail() }] } })
+      expect(await deliverOrderEmails(wsId)).toEqual({ sent: 0, failed: 0 })
+      expect(calls).toHaveLength(0)
+
+      s = await load(wsId)
+      await commit(wsId, sendPO(s, s.orders.find((o) => o.id === draft.po.id)!, { kind: 'user', name: 'Rita Teste' }, { email: true }))
+      expect(await deliverOrderEmails(wsId, { replyTo: email })).toEqual({ sent: 1, failed: 0 })
+      expect(calls).toHaveLength(1)
+      expect(calls[0].headers.authorization).toBe('Bearer re_test_key')
+      expect(calls[0].headers['idempotency-key']).toContain(draft.po.id)
+      expect(calls[0].body).toMatchObject({ from: 'Compras <compras@loja.test>', to: ['paulo@quinta.test'], reply_to: email })
+      expect(calls[0].body.subject).toContain(draft.po.number)
+      expect(calls[0].body.text).toContain(item.name)
+      let po = (await load(wsId)).orders.find((o) => o.id === draft.po.id)!
+      expect(po).toMatchObject({ status: 'sent', emailStatus: 'sent', emailError: null })
+      expect(po.emailedAt).toBeTruthy()
+      // Nothing is left in the queue, so a second run sends nothing
+      expect(await deliverOrderEmails(wsId)).toEqual({ sent: 0, failed: 0 })
+      expect(calls).toHaveLength(1)
+
+      // Resend refuses (domain not verified): the reason lands on the order, and a retry goes out with a new key
+      answer = () => new Response(JSON.stringify({ statusCode: 403, name: 'validation_error', message: 'The loja.test domain is not verified.' }), { status: 403, headers: { 'content-type': 'application/json' } })
+      await commit(wsId, { upserts: { orders: [{ ...po, ...queueEmail() }] } })
+      expect(await deliverOrderEmails(wsId)).toEqual({ sent: 0, failed: 1 })
+      po = (await load(wsId)).orders.find((o) => o.id === draft.po.id)!
+      expect(po.emailStatus).toBe('failed')
+      expect(po.emailError).toContain('not verified')
+      expect(po.emailError).not.toContain('re_test_key')
+      answer = () => new Response(JSON.stringify({ id: 'email_2' }), { status: 200, headers: { 'content-type': 'application/json' } })
+      await new Promise((r) => setTimeout(r, 5))
+      await commit(wsId, { upserts: { orders: [{ ...po, ...queueEmail() }] } })
+      expect(await deliverOrderEmails(wsId)).toEqual({ sent: 1, failed: 0 })
+      expect(calls.at(-1)!.headers['idempotency-key']).not.toBe(calls[0].headers['idempotency-key'])
+
+      // Without the host's configuration nothing is ever sent
+      delete process.env.RESEND_API_KEY
+      await commit(wsId, { upserts: { orders: [{ ...po, ...queueEmail() }] } })
+      const before = calls.length
+      expect(await deliverOrderEmails(wsId)).toEqual({ sent: 0, failed: 0 })
+      expect(calls).toHaveLength(before)
+    } finally {
+      vi.unstubAllGlobals()
+      delete process.env.RESEND_API_KEY
+      delete process.env.NAU_MAIL_FROM
+    }
+  }, 60000)
 })

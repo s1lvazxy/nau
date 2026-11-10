@@ -13,6 +13,7 @@ import { fuzzyScore } from '~/lib/utils'
 import { qty as fmtQty } from '~/lib/format'
 import { useActions } from './actions'
 import { useNavEntries } from './sidebar'
+import { tr } from '~/i18n'
 
 const itemClass = 'flex h-10 cursor-default items-center gap-3 rounded-[9px] px-3 text-[13.5px] text-ink-2 outline-none select-none data-[selected=true]:bg-hover data-[selected=true]:text-ink'
 const groupClass = '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[11.5px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-ink-4'
@@ -62,15 +63,15 @@ export function CommandMenu({ onAsk }: { onAsk: (q: string) => void }) {
       <BDialog.Portal>
         <BDialog.Backdrop className="fixed inset-0 z-[80] bg-[rgb(10_8_6/0.25)] dark:bg-black/50" />
         <BDialog.Popup className="fixed top-[14vh] left-1/2 z-[81] w-[600px] max-w-[calc(100vw-24px)] -translate-x-1/2 overflow-hidden rounded-[16px] bg-raised shadow-pop outline-none">
-          <BDialog.Title className="sr-only">Command menu</BDialog.Title>
-          <Command label="Command menu" shouldFilter={true} loop>
+          <BDialog.Title className="sr-only">{tr('Command menu')}</BDialog.Title>
+          <Command label={tr('Command menu')} shouldFilter={true} loop>
             <div className="flex items-center gap-3 border-b border-line px-4">
               <Mark size={15} className="text-ink-3" />
-              <Command.Input value={q} onValueChange={setQ} placeholder="Search items, pages, actions — or ask Operator" className="h-12 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-4" autoFocus />
-              <Kbd>esc</Kbd>
+              <Command.Input value={q} onValueChange={setQ} placeholder={tr('Search items, pages, actions — or ask Operator')} className="h-12 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-4" autoFocus />
+              <Kbd>{tr('esc')}</Kbd>
             </div>
             <Command.List className="max-h-[min(60vh,440px)] overflow-y-auto p-1.5">
-              <Command.Empty className="px-3 py-6 text-center text-[13px] text-ink-3">Nothing found. Press Enter on “Ask Operator”.</Command.Empty>
+              <Command.Empty className="px-3 py-6 text-center text-[13px] text-ink-3">{tr('Nothing found. Press Enter on “Ask Operator”.')}</Command.Empty>
               {q.trim() && (
                 <Command.Group className={groupClass}>
                   <Command.Item
@@ -84,14 +85,14 @@ export function CommandMenu({ onAsk }: { onAsk: (q: string) => void }) {
                   >
                     <Mark size={15} className="text-accent" />
                     <span className="flex-1 truncate">
-                      Ask Operator: <span className="text-ink">“{q}”</span>
+                      {tr('Ask Operator:')} <span className="text-ink">“{q}”</span>
                     </span>
                     <Kbd>↵</Kbd>
                   </Command.Item>
                 </Command.Group>
               )}
               {items.length > 0 && (
-                <Command.Group heading="Items" className={groupClass}>
+                <Command.Group heading={tr('Items')} className={groupClass}>
                   {items.map(({ i }) => (
                     <Command.Item key={i.id} value={`item ${i.name} ${i.sku} ${i.barcode ?? ''}`} onSelect={() => go(`/app/items/${i.id}`)} className={itemClass}>
                       <ItemSwatch name={i.name} hue={i.hue} size={22} />
@@ -101,32 +102,32 @@ export function CommandMenu({ onAsk }: { onAsk: (q: string) => void }) {
                   ))}
                 </Command.Group>
               )}
-              <Command.Group heading="Actions" className={groupClass}>
+              <Command.Group heading={tr('Actions')} className={groupClass}>
                 {canWrite && (
                   <>
                     <Command.Item value="new item add product" onSelect={() => go('/app/items?new=1')} className={itemClass}>
-                      <PlusIcon size={15} /> New item
+                      <PlusIcon size={15} /> {tr('New item')}
                     </Command.Item>
                     <Command.Item value="receive delivery entrada invoice" onSelect={() => go('/app/receive?new=1')} className={itemClass}>
-                      <PackageIcon size={15} /> Receive a delivery
+                      <PackageIcon size={15} /> {tr('Receive a delivery')}
                     </Command.Item>
                     <Command.Item value="new purchase order encomenda" onSelect={() => go('/app/orders?new=1')} className={itemClass}>
-                      <TruckIcon size={15} /> New purchase order
+                      <TruckIcon size={15} /> {tr('New purchase order')}
                     </Command.Item>
                     <Command.Item
                       value="run autopilot now"
                       onSelect={() => {
                         set({ commandOpen: false })
-                        void commit(runAutopilot(s), { success: 'Autopilot ran', description: 'New suggestions are in Approvals.' })
+                        void commit(runAutopilot(s), { success: tr('Autopilot ran'), description: tr('New suggestions are in Approvals.') })
                       }}
                       className={itemClass}
                     >
-                      <CompassIcon size={15} /> Run autopilot now
+                      <CompassIcon size={15} /> {tr('Run autopilot now')}
                     </Command.Item>
                   </>
                 )}
                 <Command.Item value="invite team member" onSelect={() => go('/app/settings?tab=team')} className={itemClass}>
-                  <UsersThreeIcon size={15} /> Invite a teammate
+                  <UsersThreeIcon size={15} /> {tr('Invite a teammate')}
                 </Command.Item>
                 <Command.Item
                   value="toggle theme dark light mode"
@@ -135,10 +136,10 @@ export function CommandMenu({ onAsk }: { onAsk: (q: string) => void }) {
                   }}
                   className={itemClass}
                 >
-                  <MoonIcon size={15} /> Toggle dark mode
+                  <MoonIcon size={15} /> {tr('Toggle dark mode')}
                 </Command.Item>
               </Command.Group>
-              <Command.Group heading="Go to" className={groupClass}>
+              <Command.Group heading={tr('Go to')} className={groupClass}>
                 {groups
                   .flatMap((g) => g.items)
                   .map((e) => (

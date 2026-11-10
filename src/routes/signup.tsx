@@ -10,16 +10,17 @@ import { Field, Input } from '~/components/ui/form'
 import { useSession } from '~/data/store'
 import { isCloudConfigured } from '~/lib/env'
 import { cn } from '~/lib/utils'
+import { msg, tr } from '~/i18n'
 
 export const Route = createFileRoute('/signup')({
-  head: () => ({ meta: [{ title: 'Criar conta — Nau' }] }),
+  head: () => ({ meta: [{ title: tr('Criar conta — Nau') }] }),
   component: Signup,
 })
 
 const schema = z.object({
-  name: z.string().trim().min(2, 'Diz-nos o teu nome'),
-  email: z.email('Escreve um email válido'),
-  password: z.string().min(10, 'Usa pelo menos 10 caracteres').regex(/[A-Za-z]/, 'Junta uma letra').regex(/\d|[^A-Za-z0-9]/, 'Junta um número ou símbolo'),
+  name: z.string().trim().min(2, msg('Diz-nos o teu nome')),
+  email: z.email(msg('Escreve um email válido')),
+  password: z.string().min(10, msg('Usa pelo menos 10 caracteres')).regex(/[A-Za-z]/, msg('Junta uma letra')).regex(/\d|[^A-Za-z0-9]/, msg('Junta um número ou símbolo')),
 })
 
 function strength(p: string) {
@@ -46,18 +47,18 @@ function Signup() {
       if (s.session?.mode === 'demo') await s.leaveDemo()
       try {
         const backend = useSession.getState().backend
-        if (!backend) throw new Error('Ainda a arrancar — tenta outra vez.')
+        if (!backend) throw new Error(tr('Ainda a arrancar — tenta outra vez.'))
         const r = await backend.signUp(value)
         if (r.confirm) setConfirm(value.email)
         else void navigate({ to: '/onboarding' })
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Não foi possível criar a conta')
+        setError(e instanceof Error ? e.message : tr('Não foi possível criar a conta'))
       }
     },
   })
   if (confirm)
     return (
-      <AuthShell title="Confirma o teu email" subtitle={`Enviámos um link para ${confirm}. Abre-o neste dispositivo para criares o teu espaço de trabalho.`} footer={<Link to="/login" className="underline underline-offset-2 hover:text-ink">Voltar a entrar</Link>}>
+      <AuthShell title={tr('Confirma o teu email')} subtitle={tr('Enviámos um link para {0}. Abre-o neste dispositivo para criares o teu espaço de trabalho.', confirm)} footer={<Link to="/login" className="underline underline-offset-2 hover:text-ink">{tr('Voltar a entrar')}</Link>}>
         <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-ink">
           <EnvelopeSimpleIcon size={22} />
         </div>
@@ -65,14 +66,14 @@ function Signup() {
     )
   return (
     <AuthShell
-      title="Começa com o Nau"
-      subtitle="Cria a conta e traz os teus dados: uma folha de cálculo, o SAF-T ou uma fotografia."
+      title={tr('Começa com o Nau')}
+      subtitle={tr('Cria a conta e traz os teus dados: uma folha de cálculo, o SAF-T ou uma fotografia.')}
       palette="morning"
       footer={
         <>
-          Já tens conta?{' '}
+          {tr('Já tens conta?')}
           <Link to="/login" className="font-medium text-ink underline-offset-2 hover:underline">
-            Entrar
+            {tr('Entrar')}
           </Link>
         </>
       }
@@ -80,9 +81,9 @@ function Signup() {
       {isCloudConfigured && (
         <>
           <Button size="lg" className="w-full" onClick={() => void useSession.getState().backend?.oauth('google').catch((e: Error) => setError(e.message))} icon={<GoogleIcon />}>
-            Registar com Google
+            {tr('Registar com Google')}
           </Button>
-          <Divider>ou com email</Divider>
+          <Divider>{tr('ou com email')}</Divider>
         </>
       )}
       <form
@@ -95,14 +96,14 @@ function Signup() {
       >
         <form.Field name="name">
           {(f) => (
-            <Field label="O teu nome" htmlFor="name" error={errorText(f.state.meta.errors)}>
+            <Field label={tr('O teu nome')} htmlFor="name" error={errorText(f.state.meta.errors)}>
               <Input id="name" autoComplete="name" inputSize="lg" value={f.state.value} onBlur={f.handleBlur} onChange={(e) => f.handleChange(e.target.value)} aria-invalid={!!f.state.meta.errors.length} autoFocus />
             </Field>
           )}
         </form.Field>
         <form.Field name="email">
           {(f) => (
-            <Field label="Email de trabalho" htmlFor="email" error={errorText(f.state.meta.errors)}>
+            <Field label={tr('Email de trabalho')} htmlFor="email" error={errorText(f.state.meta.errors)}>
               <Input id="email" type="email" autoComplete="email" inputSize="lg" value={f.state.value} onBlur={f.handleBlur} onChange={(e) => f.handleChange(e.target.value)} aria-invalid={!!f.state.meta.errors.length} />
             </Field>
           )}
@@ -111,7 +112,7 @@ function Signup() {
           {(f) => {
             const st = strength(f.state.value)
             return (
-              <Field label="Password" htmlFor="password" error={errorText(f.state.meta.errors)} hint="Pelo menos 10 caracteres, com um número ou símbolo.">
+              <Field label={tr('Password')} htmlFor="password" error={errorText(f.state.meta.errors)} hint={tr('Pelo menos 10 caracteres, com um número ou símbolo.')}>
                 <Input id="password" type="password" autoComplete="new-password" inputSize="lg" value={f.state.value} onBlur={f.handleBlur} onChange={(e) => f.handleChange(e.target.value)} aria-invalid={!!f.state.meta.errors.length} />
                 <div className="mt-1 flex gap-1" aria-hidden>
                   {[0, 1, 2, 3].map((i) => (
@@ -130,7 +131,7 @@ function Signup() {
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(submitting) => (
             <Button type="submit" variant="primary" size="lg" loading={submitting} className="mt-1 w-full">
-              Criar conta
+              {tr('Criar conta')}
             </Button>
           )}
         </form.Subscribe>

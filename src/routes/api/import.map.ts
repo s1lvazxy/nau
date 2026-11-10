@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
 import { FIELDS, SHEET_KINDS } from '~/ingest/tabular'
 import { authorizeModelCall, json, sameOrigin } from '~/server/guard'
+import { tr } from '~/i18n'
 
 const MODEL = process.env.NAU_AGENT_MODEL || 'claude-opus-5-5'
 
@@ -34,11 +35,11 @@ export const Route = createFileRoute('/api/import/map')({
     handlers: {
       POST: async ({ request }) => {
         if (!process.env.ANTHROPIC_API_KEY) return json({ error: 'not_configured' }, 503)
-        if (!sameOrigin(request)) return json({ error: 'Forbidden' }, 403)
+        if (!sameOrigin(request)) return json({ error: tr('Forbidden') }, 403)
         const auth = await authorizeModelCall(request, 'extract')
         if (!auth.ok) return auth.res
         const parsed = Body.safeParse(await request.json().catch(() => null))
-        if (!parsed.success) return json({ error: 'Invalid request' }, 400)
+        if (!parsed.success) return json({ error: tr('Invalid request') }, 400)
         const { tables } = parsed.data
         try {
           const res = await new Anthropic().beta.messages.parse({

@@ -1,4 +1,5 @@
 import type { ExtDocument, ExtParty, ExtProduct, IngestBatch } from './types'
+import { tr } from '~/i18n'
 
 const block = (xml: string, tag: string) => xml.matchAll(new RegExp(`<(?:\\w+:)?${tag}>([\\s\\S]*?)</(?:\\w+:)?${tag}>`, 'g'))
 const unescape = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
@@ -24,7 +25,7 @@ export interface SaftSummary {
  * Plain string scanning, so it reads the same in the browser and on the server.
  */
 export function saftToBatch(xml: string): SaftSummary {
-  if (!/<(?:\w+:)?AuditFile[\s>]/.test(xml)) throw new Error('Este ficheiro não é um SAF-T (PT).')
+  if (!/<(?:\w+:)?AuditFile[\s>]/.test(xml)) throw new Error(tr('Este ficheiro não é um SAF-T (PT).'))
   const header = [...block(xml, 'Header')][0]?.[1] ?? ''
   const products = new Map<string, ExtProduct>()
   for (const [, p] of block(xml, 'Product')) {

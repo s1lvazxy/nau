@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import NumberFlow from '@number-flow/react'
 import { cn } from '~/lib/utils'
+import { tr } from '~/i18n'
+import { numberLocale } from '~/lib/format'
 
 export function useMeasure<T extends HTMLElement>() {
   const ref = useRef<T | null>(null)
@@ -94,7 +96,7 @@ export function AreaChart({ data, height = 180, format = (v) => String(Math.roun
           }}
           onPointerLeave={() => setHover(null)}
           role="img"
-          aria-label={`${primaryLabel ?? 'Series'} chart`}
+          aria-label={tr('{0} chart', primaryLabel ?? tr('Series'))}
         >
           <defs>
             <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
@@ -242,7 +244,7 @@ export function AnimatedNumber({ value, format = 'number', decimals = 0, classNa
       : format === 'percent'
         ? { style: 'percent', maximumFractionDigits: decimals }
         : { maximumFractionDigits: decimals }
-  return <NumberFlow value={value} format={opts as never} locales="en-IE" className={cn('tabular', className)} willChange />
+  return <NumberFlow value={value} format={opts as never} locales={numberLocale()} className={cn('tabular', className)} willChange />
 }
 
 export function Delta({ value, suffix = '%', className, invert }: { value: number; suffix?: string; className?: string; invert?: boolean }) {

@@ -1,3 +1,4 @@
+import { tr } from '~/i18n'
 /** Small in-memory guards for public endpoints (per instance). Put a CDN/WAF rate limit in front in production. */
 const buckets = new Map<string, { n: number; reset: number }>()
 
@@ -51,15 +52,15 @@ export async function authorizeModelCall(request: Request, scope: 'agent' | 'ext
   const env = supabaseEnv()
   if (env.url && env.anon && mode !== 'demo') {
     const user = await verifyUser(token)
-    if (!user) return { ok: false, res: json({ error: 'Sign in to use Operator.' }, 401) }
+    if (!user) return { ok: false, res: json({ error: tr('Sign in to use Operator.') }, 401) }
     const perMin = scope === 'agent' ? 30 : 6
     const perDay = scope === 'agent' ? 1500 : 200
-    if (rateLimited(`${scope}:u:${user.id}`, perMin, 60_000) || rateLimited(`${scope}:ud:${user.id}`, perDay, 86_400_000)) return { ok: false, res: json({ error: 'Too many requests' }, 429) }
+    if (rateLimited(`${scope}:u:${user.id}`, perMin, 60_000) || rateLimited(`${scope}:ud:${user.id}`, perDay, 86_400_000)) return { ok: false, res: json({ error: tr('Too many requests') }, 429) }
     return { ok: true, who: `user:${user.id}` }
   }
-  if (mode === 'demo' && process.env.NAU_AGENT_DEMO === 'off') return { ok: false, res: json({ error: 'The demo runs on the built-in engine.' }, 503) }
+  if (mode === 'demo' && process.env.NAU_AGENT_DEMO === 'off') return { ok: false, res: json({ error: tr('The demo runs on the built-in engine.') }, 503) }
   const perMin = scope === 'agent' ? 10 : 3
   if (rateLimited(`${scope}:ip:${ip}`, perMin, 60_000) || rateLimited(`${scope}:ipd:${ip}`, scope === 'agent' ? 200 : 20, 86_400_000) || rateLimited(`${scope}:global`, scope === 'agent' ? 600 : 60, 3_600_000))
-    return { ok: false, res: json({ error: 'Too many requests' }, 429) }
+    return { ok: false, res: json({ error: tr('Too many requests') }, 429) }
   return { ok: true, who: `ip:${ip}` }
 }

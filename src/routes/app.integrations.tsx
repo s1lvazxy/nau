@@ -18,6 +18,7 @@ import type { ExtDocument } from '~/ingest/types'
 import type { IntegrationView } from '~/server/integrations'
 import { relative } from '~/lib/format'
 import { cn, stableId } from '~/lib/utils'
+import { tr } from '~/i18n'
 
 type Tab = 'connections' | 'developers'
 
@@ -34,7 +35,7 @@ function useApi() {
       const token = await accessToken()
       const res = await fetch(body ? path : `${path}?workspace=${workspaceId}`, { method: body ? 'POST' : 'GET', headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body ? JSON.stringify({ workspace: workspaceId, ...body }) : undefined })
       const json = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error((json as { error?: string }).error ?? `Request failed (${res.status})`)
+      if (!res.ok) throw new Error((json as { error?: string }).error ?? tr('Request failed ({0})', res.status))
       return json as T
     },
     [workspaceId],
@@ -42,16 +43,16 @@ function useApi() {
 }
 
 const CAN: [keyof ConnectorMeta['can'], string][] = [
-  ['catalog', 'Catalogue'],
-  ['stock', 'Stock'],
-  ['sales', 'Sales'],
-  ['purchases', 'Deliveries'],
-  ['pushStock', 'Stock back'],
-  ['webhooks', 'Live'],
+  ['catalog', tr('Catalogue')],
+  ['stock', tr('Stock')],
+  ['sales', tr('Sales')],
+  ['purchases', tr('Deliveries')],
+  ['pushStock', tr('Stock back')],
+  ['webhooks', tr('Live')],
 ]
 
 function Integrations() {
-  usePageTitle('Integrations')
+  usePageTitle(tr('Integrations'))
   const { connect, tab = 'connections' } = Route.useSearch()
   const navigate = useNavigate()
   const { session, workspaceId } = useSession()
@@ -79,11 +80,11 @@ function Integrations() {
     setBusy(`${i.id}:${action}`)
     try {
       const r = await api<{ sales?: number; refunds?: number; created?: number; updated?: number; total?: number; more?: boolean }>('/api/integrations', { action, id: i.id })
-      if (action === 'sync') toast.success(`${i.name} is up to date`, { description: [r.sales && `${r.sales} sales`, r.refunds && `${r.refunds} returns`, r.created && `${r.created} new items`].filter(Boolean).join(' · ') || 'Nothing new since the last sync.' })
-      if (action === 'push') toast.success(`Stock sent to ${i.name}`, { description: `${r.updated} of ${r.total} items updated.` })
+      if (action === 'sync') toast.success(tr('{0} is up to date', i.name), { description: [r.sales && `${r.sales} sales`, r.refunds && `${r.refunds} returns`, r.created && tr('{0} new items', r.created)].filter(Boolean).join(' · ') || tr('Nothing new since the last sync.') })
+      if (action === 'push') toast.success(tr('Stock sent to {0}', i.name), { description: tr('{0} of {1} items updated.', r.updated, r.total) })
       refresh()
     } catch (e) {
-      toast.error(action === 'sync' ? `${i.name} could not sync` : 'That didn’t work', { description: e instanceof Error ? e.message : undefined })
+      toast.error(action === 'sync' ? tr('{0} could not sync', i.name) : tr('That didn’t work'), { description: e instanceof Error ? e.message : undefined })
       void q.refetch()
     } finally {
       setBusy(null)
@@ -95,13 +96,13 @@ function Integrations() {
 
   return (
     <div className="pb-14">
-      <PageHeader title="Integrations" description="Sales and deliveries arrive from the systems you already use. Everything enters through one door, and every sync can be undone from the journal.">
+      <PageHeader title={tr('Integrations')} description={tr('Sales and deliveries arrive from the systems you already use. Everything enters through one door, and every sync can be undone from the journal.')}>
         <Segmented
           value={tab}
           onChange={(t: Tab) => void navigate({ to: '/app/integrations', search: t === 'developers' ? { tab: t } : {}, replace: true })}
           options={[
-            { value: 'connections', label: `Connections${connected.length ? ` · ${connected.length}` : ''}` },
-            { value: 'developers', label: 'API & webhooks' },
+            { value: 'connections', label: tr('Connections{0}', connected.length ? ` · ${connected.length}` : '') },
+            { value: 'developers', label: tr('API & webhooks') },
           ]}
         />
       </PageHeader>
@@ -113,14 +114,14 @@ function Integrations() {
           {!cloud && <LocalNotice />}
           {cloud && q.data && !q.data.ready && (
             <Card className="p-5 text-[13px] leading-relaxed text-ink-2">
-              <b className="font-medium text-ink">One setting is missing on the server.</b> {q.data.reason === 'secret' ? 'Set NAU_SECRET_KEY (32 random bytes, base64) so credentials can be stored encrypted, then restart.' : 'Set SUPABASE_SERVICE_ROLE_KEY so the server can read and write on its own.'}
+              <b className="font-medium text-ink">{tr('One setting is missing on the server.')}</b> {q.data.reason === 'secret' ? tr('Set NAU_SECRET_KEY (32 random bytes, base64) so credentials can be stored encrypted, then restart.') : tr('Set SUPABASE_SERVICE_ROLE_KEY so the server can read and write on its own.')}
             </Card>
           )}
           {q.error && <Card className="p-5 text-[13px] text-bad-ink">{(q.error as Error).message}</Card>}
 
           {connected.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h2 className="text-[13px] font-medium text-ink-2">Connected</h2>
+              <h2 className="text-[13px] font-medium text-ink-2">{tr('Connected')}</h2>
               {connected.map((i) => {
                 const meta = connectorMeta(i.connector)
                 const r = i.lastReport
@@ -132,26 +133,26 @@ function Integrations() {
                         <div className="flex flex-wrap items-center gap-2 text-[14px] font-medium text-ink">
                           <span className="truncate">{i.name}</span>
                           <Badge tone="muted">{meta?.name ?? i.connector}</Badge>
-                          {i.status === 'paused' && <Badge tone="neutral">Paused</Badge>}
+                          {i.status === 'paused' && <Badge tone="neutral">{tr('Paused')}</Badge>}
                         </div>
                         <div className={cn('mt-0.5 text-[12.5px]', i.status === 'error' ? 'text-bad-ink' : 'text-ink-3')}>
-                          {i.status === 'error' ? i.lastError : i.lastSyncAt ? `Synced ${relative(i.lastSyncAt)}${r ? ` · ${[r.documents.sales && `${r.documents.sales} sales`, r.documents.refunds && `${r.documents.refunds} returns`, r.products.created && `${r.products.created} new items`].filter(Boolean).join(' · ') || 'nothing new'}` : ''}` : 'Not synced yet — the first sync brings the catalogue and 90 days of sales.'}
+                          {i.status === 'error' ? i.lastError : i.lastSyncAt ? tr('Synced {0}{1}', relative(i.lastSyncAt), r ? ` · ${[r.documents.sales && `${r.documents.sales} sales`, r.documents.refunds && `${r.documents.refunds} returns`, r.products.created && `${r.products.created} new items`].filter(Boolean).join(' · ') || tr('nothing new')}` : '') : tr('Not synced yet — the first sync brings the catalogue and 90 days of sales.')}
                         </div>
                       </div>
                       {canWrite && (
                         <div className="flex items-center gap-1">
                           <Button size="sm" loading={busy === `${i.id}:sync`} disabled={!!busy || i.status === 'paused'} icon={<ArrowsClockwiseIcon size={13} />} onClick={() => void act(i, 'sync')}>
-                            Sync now
+                            {tr('Sync now')}
                           </Button>
                           {i.canPush && (
                             <Button size="sm" variant="ghost" loading={busy === `${i.id}:push`} disabled={!!busy} icon={<UploadSimpleIcon size={13} />} onClick={() => void act(i, 'push')}>
-                              Send stock
+                              {tr('Send stock')}
                             </Button>
                           )}
-                          <IconButton size="sm" label={i.status === 'paused' ? 'Resume' : 'Pause'} disabled={!!busy} onClick={() => void act(i, i.status === 'paused' ? 'resume' : 'pause')}>
+                          <IconButton size="sm" label={i.status === 'paused' ? tr('Resume') : tr('Pause')} disabled={!!busy} onClick={() => void act(i, i.status === 'paused' ? 'resume' : 'pause')}>
                             {i.status === 'paused' ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
                           </IconButton>
-                          <IconButton size="sm" label="Disconnect" disabled={!!busy} onClick={() => setRemoving(i)}>
+                          <IconButton size="sm" label={tr('Disconnect')} disabled={!!busy} onClick={() => setRemoving(i)}>
                             <TrashIcon size={14} />
                           </IconButton>
                         </div>
@@ -159,11 +160,11 @@ function Integrations() {
                     </div>
                     {i.hookUrl && (
                       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-[12.5px] text-ink-3">
-                        <span>{i.hookSigned ? 'For instant updates, point a webhook at' : 'Add the webhook secret to get instant updates at'}</span>
+                        <span>{i.hookSigned ? tr('For instant updates, point a webhook at') : tr('Add the webhook secret to get instant updates at')}</span>
                         <CopyField value={i.hookUrl} />
                       </div>
                     )}
-                    {r && r.negative > 0 && <p className="mt-3 border-t border-line pt-3 text-[12.5px] text-ink-3">{Math.round(r.negative)} units were sold with no stock behind them in the last sync. A count will set the levels straight.</p>}
+                    {r && r.negative > 0 && <p className="mt-3 border-t border-line pt-3 text-[12.5px] text-ink-3">{tr('{0} units were sold with no stock behind them in the last sync. A count will set the levels straight.', Math.round(r.negative))}</p>}
                   </Card>
                 )
               })}
@@ -178,10 +179,10 @@ function Integrations() {
                   <Card key={c.id} className={cn('flex flex-col gap-3 p-4', c.status === 'planned' && 'bg-transparent shadow-[inset_0_0_0_1px_var(--gray-a4)]')}>
                     <div className="flex items-center gap-2">
                       <span className="text-[14px] font-medium text-ink">{c.name}</span>
-                      {c.status === 'beta' ? <Badge tone="muted">Beta</Badge> : <Badge tone="neutral">Planned</Badge>}
+                      {c.status === 'beta' ? <Badge tone="muted">{tr('Beta')}</Badge> : <Badge tone="neutral">{tr('Planned')}</Badge>}
                       {c.status === 'beta' && (
                         <Button size="sm" className="ml-auto" variant={ready ? 'secondary' : 'ghost'} disabled={!ready || !canWrite} icon={<PlusIcon size={12} />} onClick={() => setDialog(c)}>
-                          Connect
+                          {tr('Connect')}
                         </Button>
                       )}
                     </div>
@@ -201,11 +202,10 @@ function Integrations() {
             </section>
           ))}
           <p className="text-[12.5px] leading-relaxed text-ink-3">
-            <b className="font-medium text-ink-2">Beta</b> means the connector was built and tested against the vendor’s public documentation and has not yet been proven on a live account — watch the first syncs. Anything not listed can post sales to the{' '}
+            <b className="font-medium text-ink-2">{tr('Beta')}</b> {tr('means the connector was built and tested against the vendor’s public documentation and has not yet been proven on a live account — watch the first syncs. Anything not listed can post sales to the')}
             <button type="button" className="text-ink underline underline-offset-2" onClick={() => void navigate({ to: '/app/integrations', search: { tab: 'developers' } })}>
               API
-            </button>{' '}
-            or come in as a SAF-T file.
+            </button> {tr('or come in as a SAF-T file.')}
           </p>
         </div>
       )}
@@ -215,12 +215,12 @@ function Integrations() {
         open={!!removing}
         onOpenChange={(o) => !o && setRemoving(null)}
         size="sm"
-        title={`Disconnect ${removing?.name ?? ''}?`}
-        description="Nau stops reading it and forgets the credentials. Items, sales and stock that already came in stay."
+        title={tr('Disconnect {0}?', removing?.name ?? '')}
+        description={tr('Nau stops reading it and forgets the credentials. Items, sales and stock that already came in stay.')}
         footer={
           <>
             <Button variant="ghost" onClick={() => setRemoving(null)}>
-              Keep it
+              {tr('Keep it')}
             </Button>
             <Button
               variant="danger"
@@ -228,12 +228,12 @@ function Integrations() {
                 const i = removing!
                 setRemoving(null)
                 void api('/api/integrations', { action: 'disconnect', id: i.id }).then(
-                  () => (toast.success(`${i.name} disconnected`), void q.refetch()),
-                  (e: Error) => toast.error('Could not disconnect', { description: e.message }),
+                  () => (toast.success(tr('{0} disconnected', i.name)), void q.refetch()),
+                  (e: Error) => toast.error(tr('Could not disconnect'), { description: e.message }),
                 )
               }}
             >
-              Disconnect
+              {tr('Disconnect')}
             </Button>
           </>
         }
@@ -253,13 +253,13 @@ function ConnectDialog({ meta, onClose, onDone }: { meta: ConnectorMeta; onClose
     setError(null)
     try {
       const { integration } = await api<{ integration: IntegrationView }>('/api/integrations', { action: 'connect', connector: meta.id, fields })
-      toast.success(`${integration.name} connected`, { description: 'Reading the catalogue and the last 90 days of sales…' })
+      toast.success(tr('{0} connected', integration.name), { description: tr('Reading the catalogue and the last 90 days of sales…') })
       onDone()
       onClose()
       // The first sync starts at once; the page shows its progress
       void api('/api/integrations', { action: 'sync', id: integration.id }).then(onDone, onDone)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not connect')
+      setError(e instanceof Error ? e.message : tr('Could not connect'))
       setBusy(false)
     }
   }
@@ -267,20 +267,20 @@ function ConnectDialog({ meta, onClose, onDone }: { meta: ConnectorMeta; onClose
     <Modal
       open
       onOpenChange={(o) => !o && !busy && onClose()}
-      title={`Connect ${meta.name}`}
+      title={tr('Connect {0}', meta.name)}
       description={meta.setup}
       footer={
         <>
           {meta.docs && (
             <a href={meta.docs} target="_blank" rel="noreferrer" className="mr-auto inline-flex items-center gap-1 text-[12.5px] text-ink-3 hover:text-ink">
-              {meta.name} docs <ArrowSquareOutIcon size={12} />
+              {tr('{0} docs', meta.name)} <ArrowSquareOutIcon size={12} />
             </a>
           )}
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            {tr('Cancel')}
           </Button>
           <Button variant="primary" loading={busy} disabled={missing} onClick={() => void submit()}>
-            {busy ? 'Testing…' : 'Test and connect'}
+            {busy ? tr('Testing…') : tr('Test and connect')}
           </Button>
         </>
       }
@@ -302,7 +302,7 @@ function ConnectDialog({ meta, onClose, onDone }: { meta: ConnectorMeta; onClose
             {error}
           </p>
         )}
-        <p className="text-[12px] leading-relaxed text-ink-3">Nau tests the credentials before saving them, stores them encrypted on the server, and never shows them again. Nothing is written to {meta.name} unless you press “Send stock”.</p>
+        <p className="text-[12px] leading-relaxed text-ink-3">{tr('Nau tests the credentials before saving them, stores them encrypted on the server, and never shows them again. Nothing is written to {0} unless you press “Send stock”.', meta.name)}</p>
         <button type="submit" hidden />
       </form>
     </Modal>
@@ -316,7 +316,7 @@ function CopyField({ value, secret }: { value: string; secret?: boolean }) {
       type="button"
       onClick={() => void navigator.clipboard.writeText(value).then(() => (setDone(true), setTimeout(() => setDone(false), 1400)))}
       className={cn('group inline-flex max-w-full items-center gap-2 rounded-[8px] bg-hover px-2.5 py-1.5 font-mono text-[11.5px] text-ink-2 hover:text-ink', secret && 'bg-accent-soft text-accent-ink')}
-      aria-label={`Copy ${secret ? 'secret' : value}`}
+      aria-label={tr('Copy {0}', secret ? tr('secret') : value)}
     >
       <span className="truncate">{value}</span>
       {done ? <CheckIcon size={12} weight="bold" className="shrink-0 text-ok" /> : <CopyIcon size={12} className="shrink-0 text-ink-3 group-hover:text-ink" />}
@@ -343,10 +343,10 @@ function LocalNotice() {
         return { sku: it.sku, name: it.name, qty: 1 + ((d + k) % 3), unitPrice: it.price }
       }),
     }))
-    const actor = { kind: 'system' as const, name: 'Demo till' }
-    const r = ingest(s, { documents: docs }, { source: stableId('demo-pos'), label: 'Demo till', actor })
-    const j = record(s, { kind: 'sync', risk: 'reversible', title: `Demo till: ${r.report.documents.sales} sales`, lines: [`${r.report.lines.applied} lines applied to stock`], cs: r.cs, source: 'integration', link: '/app/movements' }, actor, { force: 'auto' })
-    void commit(j.cs, { success: `${r.report.documents.sales} sales came in from the till`, description: 'They are in the ledger, and the sync is in the journal with Undo.' })
+    const actor = { kind: 'system' as const, name: tr('Demo till') }
+    const r = ingest(s, { documents: docs }, { source: stableId('demo-pos'), label: tr('Demo till'), actor })
+    const j = record(s, { kind: 'sync', risk: 'reversible', title: tr('Demo till: {0} sales', r.report.documents.sales), lines: [tr('{0} lines applied to stock', r.report.lines.applied)], cs: r.cs, source: 'integration', link: '/app/movements' }, actor, { force: 'auto' })
+    void commit(j.cs, { success: tr('{0} sales came in from the till', r.report.documents.sales), description: tr('They are in the ledger, and the sync is in the journal with Undo.') })
   }
   return (
     <Card className="flex flex-col gap-3 p-5 md:flex-row md:items-center">
@@ -354,14 +354,14 @@ function LocalNotice() {
         <PlugsConnectedIcon size={18} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-medium text-ink">{demo ? 'The demo keeps everything in your browser' : 'Connections need the server database'}</p>
+        <p className="text-[14px] font-medium text-ink">{demo ? tr('The demo keeps everything in your browser') : tr('Connections need the server database')}</p>
         <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-3">
-          {demo ? 'So there is nothing to connect to here — but you can watch what a connected till does: nine sales arrive, stock moves, and the whole sync can be undone.' : 'In local mode your data lives in this browser, so a server cannot sync into it. Run Nau with a Supabase database to connect systems. Files work everywhere: import a spreadsheet or a SAF-T under Insights.'}
+          {demo ? tr('So there is nothing to connect to here — but you can watch what a connected till does: nine sales arrive, stock moves, and the whole sync can be undone.') : tr('In local mode your data lives in this browser, so a server cannot sync into it. Run Nau with a Supabase database to connect systems. Files work everywhere: import a spreadsheet or a SAF-T under Insights.')}
         </p>
       </div>
       {canWrite && (
         <Button variant="primary" icon={<ArrowsClockwiseIcon size={14} />} onClick={simulate}>
-          Simulate a till sync
+          {tr('Simulate a till sync')}
         </Button>
       )}
     </Card>
@@ -403,29 +403,29 @@ function Developers({ ready, cloud }: { ready: boolean; cloud: boolean }) {
       done?.(await api('/api/developers', body))
       await q.refetch()
     } catch (e) {
-      toast.error('That didn’t work', { description: e instanceof Error ? e.message : undefined })
+      toast.error(tr('That didn’t work'), { description: e instanceof Error ? e.message : undefined })
     } finally {
       setBusy(false)
     }
   }
   if (!cloud) return <div className="mx-auto max-w-[860px] px-5 py-6 md:px-8"><LocalNotice /></div>
-  if (!admin) return <Empty icon={<KeyIcon size={20} />} title="For owners and admins">API keys and webhooks give other systems access to this workspace, so only owners and admins manage them.</Empty>
+  if (!admin) return <Empty icon={<KeyIcon size={20} />} title={tr('For owners and admins')}>{tr('API keys and webhooks give other systems access to this workspace, so only owners and admins manage them.')}</Empty>
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-8 px-5 py-6 md:px-8">
       {fresh && (
         <Card className="flex flex-col gap-2 p-4 shadow-[0_0_0_1.5px_var(--accent-9)]">
           <p className="text-[13.5px] font-medium text-ink">{fresh.label}</p>
           <CopyField value={fresh.value} secret />
-          <p className="text-[12.5px] text-ink-3">Copy it now. Nau keeps only a fingerprint of it and cannot show it again.</p>
+          <p className="text-[12.5px] text-ink-3">{tr('Copy it now. Nau keeps only a fingerprint of it and cannot show it again.')}</p>
         </Card>
       )}
 
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-[14px] font-medium text-ink">
-            <KeyIcon size={15} className="text-ink-3" /> API keys
+            <KeyIcon size={15} className="text-ink-3" /> {tr('API keys')}
           </h2>
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-3">Any system that can make an HTTP request can post sales and deliveries to Nau and read stock back. Requests are idempotent on your own document id.</p>
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-3">{tr('Any system that can make an HTTP request can post sales and deliveries to Nau and read stock back. Requests are idempotent on your own document id.')}</p>
         </div>
         <Card className="divide-y divide-line">
           {(q.data?.keys ?? []).map((k) => (
@@ -433,14 +433,14 @@ function Developers({ ready, cloud }: { ready: boolean; cloud: boolean }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-[13.5px] text-ink">
                   <span className="truncate font-medium">{k.name}</span>
-                  <Badge tone="muted">{k.scopes.includes('write') ? 'Read and write' : 'Read only'}</Badge>
+                  <Badge tone="muted">{k.scopes.includes('write') ? tr('Read and write') : tr('Read only')}</Badge>
                 </div>
                 <div className="font-mono text-[11.5px] text-ink-3">
-                  {k.prefix}… <span className="font-sans">· {k.last_used_at ? `used ${relative(k.last_used_at)}` : 'never used'}</span>
+                  {k.prefix}… <span className="font-sans">· {k.last_used_at ? tr('used {0}', relative(k.last_used_at)) : tr('never used')}</span>
                 </div>
               </div>
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run({ action: 'revoke_key', id: k.id })}>
-                Revoke
+                {tr('Revoke')}
               </Button>
             </div>
           ))}
@@ -448,17 +448,17 @@ function Developers({ ready, cloud }: { ready: boolean; cloud: boolean }) {
             className="flex flex-wrap items-end gap-3 px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault()
-              if (name.trim()) void run({ action: 'create_key', name, write }, (r) => (setFresh({ label: `API key “${name.trim()}”`, value: r.key! }), setName('')))
+              if (name.trim()) void run({ action: 'create_key', name, write }, (r) => (setFresh({ label: tr('API key “{0}”', name.trim()), value: r.key! }), setName('')))
             }}
           >
-            <Field label="New key" htmlFor="key-name" className="min-w-[200px] flex-1">
-              <Input id="key-name" placeholder="What will use it, e.g. Till at Bonfim" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+            <Field label={tr('New key')} htmlFor="key-name" className="min-w-[200px] flex-1">
+              <Input id="key-name" placeholder={tr('What will use it, e.g. Till at Bonfim')} value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
             </Field>
             <div className="pb-1">
-              <Switch checked={write} onChange={setWrite} label="Can write" />
+              <Switch checked={write} onChange={setWrite} label={tr('Can write')} />
             </div>
             <Button type="submit" variant="primary" disabled={!ready || !name.trim() || busy} icon={<PlusIcon size={12} />}>
-              Create key
+              {tr('Create key')}
             </Button>
           </form>
         </Card>
@@ -468,15 +468,15 @@ function Developers({ ready, cloud }: { ready: boolean; cloud: boolean }) {
        "lines":[{"sku":"AZ-500","name":"Azeite Virgem 500ml","qty":2,"unitPrice":7.9}]}'
 
 curl ${origin}/api/v1/stock -H "Authorization: Bearer nau_…"`}</pre>
-        <p className="text-[12.5px] text-ink-3">Also: GET /api/v1/items, /movements, /orders and POST /api/v1/products. The full reference is in docs/api.md in the repository.</p>
+        <p className="text-[12.5px] text-ink-3">{tr('Also: GET /api/v1/items, /movements, /orders and POST /api/v1/products. The full reference is in docs/api.md in the repository.')}</p>
       </section>
 
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-[14px] font-medium text-ink">
-            <WebhooksLogoIcon size={15} className="text-ink-3" /> Webhooks
+            <WebhooksLogoIcon size={15} className="text-ink-3" /> {tr('Webhooks')}
           </h2>
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-3">Nau posts each entry of the activity feed to your address, signed with HMAC-SHA256, at least once and in order.</p>
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-3">{tr('Nau posts each entry of the activity feed to your address, signed with HMAC-SHA256, at least once and in order.')}</p>
         </div>
         <Card className="divide-y divide-line">
           {(q.data?.webhooks ?? []).map((h) => (
@@ -484,10 +484,10 @@ curl ${origin}/api/v1/stock -H "Authorization: Bearer nau_…"`}</pre>
               <Dot tone={!h.active ? 'muted' : h.failures ? 'warn' : 'ok'} />
               <div className="min-w-0 flex-1">
                 <div className="truncate font-mono text-[12px] text-ink">{h.url}</div>
-                <div className="text-[12px] text-ink-3">{!h.active ? 'Switched off after 30 failed deliveries in a row' : h.last_delivery_at ? `Last delivery ${relative(h.last_delivery_at)} · HTTP ${h.last_status || 'no answer'}${h.failures ? ` · ${h.failures} failing` : ''}` : 'Nothing delivered yet'}</div>
+                <div className="text-[12px] text-ink-3">{!h.active ? tr('Switched off after 30 failed deliveries in a row') : h.last_delivery_at ? tr('Last delivery {0} · HTTP {1}{2}', relative(h.last_delivery_at), h.last_status || tr('no answer'), h.failures ? tr(' · {0} failing', h.failures) : '') : tr('Nothing delivered yet')}</div>
               </div>
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run({ action: 'delete_webhook', id: h.id })}>
-                Remove
+                {tr('Remove')}
               </Button>
             </div>
           ))}
@@ -495,14 +495,14 @@ curl ${origin}/api/v1/stock -H "Authorization: Bearer nau_…"`}</pre>
             className="flex flex-wrap items-end gap-3 px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault()
-              if (url.trim()) void run({ action: 'create_webhook', url: url.trim() }, (r) => (setFresh({ label: 'Webhook signing secret', value: r.secret! }), setUrl('')))
+              if (url.trim()) void run({ action: 'create_webhook', url: url.trim() }, (r) => (setFresh({ label: tr('Webhook signing secret'), value: r.secret! }), setUrl('')))
             }}
           >
-            <Field label="New endpoint" htmlFor="hook-url" className="min-w-[240px] flex-1">
+            <Field label={tr('New endpoint')} htmlFor="hook-url" className="min-w-[240px] flex-1">
               <Input id="hook-url" type="url" placeholder="https://example.pt/hooks/nau" value={url} onChange={(e) => setUrl(e.target.value)} spellCheck={false} />
             </Field>
             <Button type="submit" variant="primary" disabled={!ready || !/^https:\/\/.+\..+/.test(url.trim()) || busy} icon={<PlusIcon size={12} />}>
-              Add endpoint
+              {tr('Add endpoint')}
             </Button>
           </form>
         </Card>

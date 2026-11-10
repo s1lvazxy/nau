@@ -4,6 +4,7 @@ import { hashString, uid } from '~/lib/utils'
 import { createDemoSnapshot } from '~/lib/seed'
 import { applyChangeSet, type ChangeSet } from './changeset'
 import { AuthError, type Backend, type WorkspaceRef } from './backend'
+import { tr } from '~/i18n'
 
 interface LocalUser extends UserProfile {
   salt: string
@@ -18,7 +19,7 @@ interface IndexEntry {
 
 const store = typeof indexedDB !== 'undefined' ? createStore('nau', 'kv') : undefined
 const SESSION_KEY = 'nau:session'
-const DEMO_USER: UserProfile = { id: 'demo-guest', email: 'guest@nau.demo', name: 'Guest', hue: 24 }
+const DEMO_USER: UserProfile = { id: 'demo-guest', email: 'guest@nau.demo', name: tr('Guest'), hue: 24 }
 export const DEMO_WS_KEY = 'nau:demo'
 
 async function pbkdf2(password: string, salt: string) {
@@ -82,7 +83,7 @@ export function createLocalBackend(demo: boolean): Backend {
     async signUp({ name, email, password }) {
       const all = await users()
       const norm = email.trim().toLowerCase()
-      if (all.some((u) => u.email === norm)) throw new AuthError('An account with this email already exists. Sign in instead.', 'exists')
+      if (all.some((u) => u.email === norm)) throw new AuthError(tr('An account with this email already exists. Sign in instead.'), 'exists')
       const salt = uid()
       const user: LocalUser = { id: uid(), email: norm, name: name.trim(), hue: hashString(norm) % 360, salt, hash: await pbkdf2(password, salt), createdAt: new Date().toISOString() }
       await set('nau:users', [...all, user], store)
@@ -92,15 +93,15 @@ export function createLocalBackend(demo: boolean): Backend {
     },
     async signIn({ email, password }) {
       const u = (await users()).find((x) => x.email === email.trim().toLowerCase())
-      if (!u || (await pbkdf2(password, u.salt)) !== u.hash) throw new AuthError('That email and password don’t match.', 'invalid')
+      if (!u || (await pbkdf2(password, u.salt)) !== u.hash) throw new AuthError(tr('That email and password don’t match.'), 'invalid')
       localStorage.setItem(SESSION_KEY, u.id)
       await emit()
     },
     async magicLink() {
-      throw new AuthError('Magic links need the server database. Use your password in local mode.', 'unsupported')
+      throw new AuthError(tr('Magic links need the server database. Use your password in local mode.'), 'unsupported')
     },
     async oauth() {
-      throw new AuthError('Google sign-in needs the server database. Use your email and password in local mode.', 'unsupported')
+      throw new AuthError(tr('Google sign-in needs the server database. Use your email and password in local mode.'), 'unsupported')
     },
     async resetPassword(email) {
       const u = (await users()).find((x) => x.email === email.trim().toLowerCase())
@@ -110,10 +111,10 @@ export function createLocalBackend(demo: boolean): Backend {
     },
     async updatePassword(password) {
       const id = localStorage.getItem('nau:reset') ?? readSessionUser()
-      if (!id) throw new AuthError('Your reset link has expired. Ask for a new one.', 'expired')
+      if (!id) throw new AuthError(tr('Your reset link has expired. Ask for a new one.'), 'expired')
       const all = await users()
       const u = all.find((x) => x.id === id)
-      if (!u) throw new AuthError('Account not found.', 'missing')
+      if (!u) throw new AuthError(tr('Account not found.'), 'missing')
       u.salt = uid()
       u.hash = await pbkdf2(password, u.salt)
       await set('nau:users', all, store)
@@ -152,7 +153,7 @@ export function createLocalBackend(demo: boolean): Backend {
         return initial.workspace.id
       }
       const s = await current()
-      if (!s) throw new AuthError('Sign in first.')
+      if (!s) throw new AuthError(tr('Sign in first.'))
       await set(wsKey(initial.workspace.id), initial, store)
       cache.set(wsKey(initial.workspace.id), initial)
       await set('nau:ws-index', [...(await index()), { id: initial.workspace.id, name: initial.workspace.name, ownerId: s.user.id }], store)
@@ -172,7 +173,7 @@ export function createLocalBackend(demo: boolean): Backend {
         snap = createDemoSnapshot()
         await set(key, snap, store)
       }
-      if (!snap) throw new Error('Workspace not found')
+      if (!snap) throw new Error(tr('Workspace not found'))
       // Workspaces saved before the journal existed
       if (!snap.actions || !snap.rules) snap = { ...snap, actions: snap.actions ?? [], rules: snap.rules ?? [] }
       cache.set(key, snap)

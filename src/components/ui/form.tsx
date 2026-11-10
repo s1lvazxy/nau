@@ -3,6 +3,7 @@ import { Select as BSelect } from '@base-ui/react/select'
 import { Switch as BSwitch } from '@base-ui/react/switch'
 import { CaretUpDownIcon, CheckIcon } from '@phosphor-icons/react'
 import { cn } from '~/lib/utils'
+import { tr } from '~/i18n'
 
 export const inputClass =
   'h-8 w-full rounded-[8px] bg-raised px-2.5 text-[13px] text-ink shadow-[inset_0_0_0_1px_var(--gray-a6)] outline-none transition-shadow duration-150 placeholder:text-ink-4 hover:shadow-[inset_0_0_0_1px_var(--gray-a7)] focus:shadow-[inset_0_0_0_1px_var(--accent-9),0_0_0_3px_var(--accent-a4)] disabled:opacity-50 aria-[invalid=true]:shadow-[inset_0_0_0_1px_var(--red-9)]'
@@ -29,7 +30,7 @@ export function Field({ label, hint, error, children, className, htmlFor, option
     <div className={cn('flex flex-col gap-1.5', className)}>
       <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink-2">
         {label}
-        {optional && <span className="font-normal text-ink-4">Optional</span>}
+        {optional && <span className="font-normal text-ink-4">{tr('Optional')}</span>}
       </label>
       {children}
       {error ? <p className="text-[12px] text-bad-ink" role="alert">{error}</p> : hint ? <p className="text-[12px] text-ink-3">{hint}</p> : null}

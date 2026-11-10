@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Accent } from '~/lib/types'
+import { currentLang } from '~/i18n'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -24,7 +25,7 @@ export const useUI = create<UIState>()(
       accent: 'ember',
       density: 'comfortable',
       sidebarCollapsed: false,
-      numberLocale: 'en-IE',
+      numberLocale: currentLang() === 'pt' ? 'pt-PT' : 'en-IE',
       hiddenNav: [],
       dashboardId: null,
       commandOpen: false,

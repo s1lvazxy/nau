@@ -16,6 +16,7 @@ import { usePageTitle } from '~/components/app/page'
 import { useUI } from '~/stores/ui'
 import { useOperator } from '~/agent/operator'
 import { Mark } from '~/components/brand/logo'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/app/')({
   validateSearch: (s: Record<string, unknown>): { welcome?: number } => (s.welcome ? { welcome: 1 } : {}),
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/app/')({
 })
 
 function Home() {
-  usePageTitle('Home')
+  usePageTitle(tr('Home'))
   const s = useSnapshot()
   const { commit, canWrite, actor } = useActions()
   const navigate = useNavigate()
@@ -53,7 +54,7 @@ function Home() {
           <div className="min-w-0">
             <h1 className="text-[clamp(1.55rem,2.4vw,2rem)] leading-[1.1] font-medium tracking-[-0.035em] text-ink">
               {greeting()}
-              {first && first !== 'Guest' && first !== 'You' ? `, ${first}` : ''}
+              {first && first !== tr('Guest') && first !== tr('You') ? `, ${first}` : ''}
             </h1>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[13px] text-ink-3">
               <span>{date(new Date(), 'long')}</span>
@@ -63,7 +64,7 @@ function Home() {
                 <>
                   <span className="text-ink-4" aria-hidden>·</span>
                   <button type="button" onClick={() => void navigate({ to: '/app/approvals' })} className="text-ink-2 underline decoration-[var(--gray-a6)] underline-offset-[3px] hover:text-ink">
-                    {pending} waiting for you
+                    {tr('{0} waiting for you', pending)}
                   </button>
                 </>
               )}
@@ -72,19 +73,19 @@ function Home() {
           <div className="flex items-center gap-2">
             {editing && canWrite && (
               <Button size="md" icon={<PlusIcon size={14} />} onClick={() => setGallery(true)}>
-                Add widget
+                {tr('Add widget')}
               </Button>
             )}
             {canWrite && (
               <Button size="md" variant={editing ? 'primary' : 'secondary'} icon={editing ? <CheckIcon size={14} /> : <SlidersHorizontalIcon size={14} />} onClick={() => set({ editingDashboard: !editing })}>
-                {editing ? 'Done' : 'Customise'}
+                {editing ? tr('Done') : tr('Customise')}
               </Button>
             )}
           </div>
         </div>
 
         <div className="mt-6 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-          <div className="inline-flex items-center gap-0.5 rounded-[10px] bg-hover p-[3px]" role="tablist" aria-label="Dashboards">
+          <div className="inline-flex items-center gap-0.5 rounded-[10px] bg-hover p-[3px]" role="tablist" aria-label={tr('Dashboards')}>
             {dashboards.map((d) => (
               <button
                 key={d.id}
@@ -93,7 +94,7 @@ function Home() {
                 onClick={() => set({ dashboardId: d.id })}
                 className={cn('h-7 rounded-[7px] px-3 text-[12.5px] whitespace-nowrap transition-colors duration-100', d.id === active?.id ? 'bg-surface font-medium text-ink shadow-card' : 'text-ink-3 hover:text-ink')}
               >
-                {d.name}
+                {tr(d.name)}
               </button>
             ))}
           </div>
@@ -103,18 +104,18 @@ function Home() {
               trigger={<DotsThreeIcon size={15} weight="bold" />}
               align="start"
               items={[
-                { label: 'Rename', icon: <PencilSimpleIcon size={14} />, onSelect: () => setRenaming(active) },
+                { label: tr('Rename'), icon: <PencilSimpleIcon size={14} />, onSelect: () => setRenaming(active) },
                 {
-                  label: 'Duplicate',
+                  label: tr('Duplicate'),
                   icon: <CopyIcon size={14} />,
                   onSelect: () => {
                     const copy: Dashboard = { ...active, id: uid(), name: `${active.name} copy`, position: dashboards.length, widgets: active.widgets.map((w) => ({ ...w, id: uid() })) }
-                    void commit(saveDashboard(copy), { success: 'Dashboard duplicated' })
+                    void commit(saveDashboard(copy), { success: tr('Dashboard duplicated') })
                     set({ dashboardId: copy.id })
                   },
                 },
                 {
-                  label: 'Reset to template',
+                  label: tr('Reset to template'),
                   icon: <ArrowCounterClockwiseIcon size={14} />,
                   onSelect: () => {
                     const tpl = defaultDashboards()[active.position === 1 ? 1 : 0]
@@ -123,12 +124,12 @@ function Home() {
                 },
                 { separator: true, label: '' },
                 {
-                  label: 'Delete',
+                  label: tr('Delete'),
                   icon: <TrashIcon size={14} />,
                   danger: true,
                   disabled: dashboards.length < 2,
                   onSelect: () => {
-                    void commit({ removes: { dashboards: [active.id] } }, { success: `Deleted “${active.name}”`, undo: { upserts: { dashboards: [active] } } })
+                    void commit({ removes: { dashboards: [active.id] } }, { success: tr('Deleted “{0}”', active.name), undo: { upserts: { dashboards: [active] } } })
                     set({ dashboardId: dashboards.find((x) => x.id !== active.id)?.id ?? null })
                   },
                 },
@@ -136,8 +137,8 @@ function Home() {
             />
           )}
           {canWrite && (
-            <button type="button" onClick={addDashboard} className="flex h-7 items-center gap-1 rounded-[8px] px-2 text-[12.5px] text-ink-3 hover:bg-hover hover:text-ink" aria-label="New dashboard">
-              <PlusIcon size={13} /> New
+            <button type="button" onClick={addDashboard} className="flex h-7 items-center gap-1 rounded-[8px] px-2 text-[12.5px] text-ink-3 hover:bg-hover hover:text-ink" aria-label={tr('New dashboard')}>
+              <PlusIcon size={13} /> {tr('New')}
             </button>
           )}
         </div>
@@ -149,10 +150,10 @@ function Home() {
         ) : (
           <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
             <SparkleIcon size={22} className="text-accent" />
-            <p className="text-[15px] font-medium text-ink">An empty canvas</p>
-            <p className="max-w-sm text-[13px] text-ink-3">Add widgets from the gallery, or ask Operator: “add a widget with this week’s sales”.</p>
+            <p className="text-[15px] font-medium text-ink">{tr('An empty canvas')}</p>
+            <p className="max-w-sm text-[13px] text-ink-3">{tr('Add widgets from the gallery, or ask Operator: “add a widget with this week’s sales”.')}</p>
             <Button variant="primary" icon={<PlusIcon size={14} />} onClick={() => (set({ editingDashboard: true }), setGallery(true))}>
-              Add widgets
+              {tr('Add widgets')}
             </Button>
           </div>
         )}
@@ -168,8 +169,8 @@ function Home() {
 function RenameDialog({ d, onClose, onSave }: { d: Dashboard; onClose: () => void; onSave: (n: string) => void }) {
   const [name, setName] = useState(d.name)
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()} title="Rename dashboard" size="sm" footer={<><Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" onClick={() => name.trim() && onSave(name.trim())}>Save</Button></>}>
-      <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && name.trim() && onSave(name.trim())} autoFocus aria-label="Dashboard name" />
+    <Modal open onOpenChange={(o) => !o && onClose()} title={tr('Rename dashboard')} size="sm" footer={<><Button variant="ghost" onClick={onClose}>{tr('Cancel')}</Button><Button variant="primary" onClick={() => name.trim() && onSave(name.trim())}>{tr('Save')}</Button></>}>
+      <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && name.trim() && onSave(name.trim())} autoFocus aria-label={tr('Dashboard name')} />
     </Modal>
   )
 }
@@ -179,17 +180,17 @@ function Welcome({ onClose }: { onClose: () => void }) {
   const empty = s.items.length === 0
   const steps = empty
     ? [
-        ['Add your first items', 'Import a spreadsheet in Insights, or scan barcodes as deliveries arrive.', '/app/items?new=1'],
-        ['Add your suppliers', 'Lead times and minimum orders let Nau size every order.', '/app/suppliers'],
-        ['Do a first count', 'Five minutes per shelf, on your phone.', '/app/counts'],
+        [tr('Add your first items'), tr('Import a spreadsheet in Insights, or scan barcodes as deliveries arrive.'), '/app/items?new=1'],
+        [tr('Add your suppliers'), tr('Lead times and minimum orders let Nau size every order.'), '/app/suppliers'],
+        [tr('Do a first count'), tr('Five minutes per shelf, on your phone.'), '/app/counts'],
       ]
     : [
-        ['Review what autopilot found', 'Suggestions are waiting in Approvals.', '/app/approvals'],
-        ['Ask Operator anything', 'Press ⌘J — try “what’s running low?”.', ''],
-        ['Make the dashboard yours', 'Customise, drag, resize — or describe a widget.', ''],
+        [tr('Review what autopilot found'), tr('Suggestions are waiting in Approvals.'), '/app/approvals'],
+        [tr('Ask Operator anything'), tr('Press ⌘J — try “what’s running low?”.'), ''],
+        [tr('Make the dashboard yours'), tr('Customise, drag, resize — or describe a widget.'), ''],
       ]
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()} title="Your workspace is ready" description={`${s.workspace.name} is set up. Three good places to start:`} footer={<Button variant="primary" onClick={onClose}>Let’s go</Button>}>
+    <Modal open onOpenChange={(o) => !o && onClose()} title={tr('Your workspace is ready')} description={tr('{0} is set up. Three good places to start:', s.workspace.name)} footer={<Button variant="primary" onClick={onClose}>{tr('Let’s go')}</Button>}>
       <ol className="flex flex-col gap-2">
         {steps.map(([t, b, to], i) => (
           <li key={t}>
@@ -212,7 +213,7 @@ function Welcome({ onClose }: { onClose: () => void }) {
         ))}
       </ol>
       <div className="mt-4 flex items-center gap-2 text-[12px] text-ink-4">
-        <Mark size={12} /> Tip: ⌘K finds anything. ⌘J opens Operator.
+        <Mark size={12} /> {tr('Tip: ⌘K finds anything. ⌘J opens Operator.')}
       </div>
     </Modal>
   )

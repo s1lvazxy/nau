@@ -36,6 +36,7 @@ import { AnimatedNumber, AreaChart, BarList, Delta, MiniBars, Sparkline, Stacked
 import { Avatar, Badge, Dot, ItemSwatch } from '~/components/ui/primitives'
 import { Mark } from '~/components/brand/logo'
 import { useActions } from '~/components/app/actions'
+import { tr } from '~/i18n'
 
 /* ───────────────────────────── Registry ───────────────────────────── */
 
@@ -50,37 +51,37 @@ export interface WidgetDef {
 }
 
 export const KPI_METRICS: { value: string; label: string }[] = [
-  { value: 'stockValue', label: 'Stock value' },
-  { value: 'retailValue', label: 'Retail value' },
-  { value: 'revenue7', label: 'Sales · 7 days' },
-  { value: 'revenue30', label: 'Sales · 30 days' },
-  { value: 'unitsToday', label: 'Units sold today' },
-  { value: 'lowCount', label: 'To reorder' },
-  { value: 'outCount', label: 'Out of stock' },
-  { value: 'deadValue', label: 'Not moving' },
-  { value: 'openPOValue', label: 'On order' },
-  { value: 'turnover', label: 'Stock turns' },
-  { value: 'health', label: 'Stock health' },
-  { value: 'margin30', label: 'Gross margin · 30 days' },
+  { value: 'stockValue', label: tr('Stock value') },
+  { value: 'retailValue', label: tr('Retail value') },
+  { value: 'revenue7', label: tr('Sales · 7 days') },
+  { value: 'revenue30', label: tr('Sales · 30 days') },
+  { value: 'unitsToday', label: tr('Units sold today') },
+  { value: 'lowCount', label: tr('To reorder') },
+  { value: 'outCount', label: tr('Out of stock') },
+  { value: 'deadValue', label: tr('Not moving') },
+  { value: 'openPOValue', label: tr('On order') },
+  { value: 'turnover', label: tr('Stock turns') },
+  { value: 'health', label: tr('Stock health') },
+  { value: 'margin30', label: tr('Gross margin · 30 days') },
 ]
 
 export const WIDGET_DEFS: Record<WidgetType, WidgetDef> = {
-  kpi: { type: 'kpi', name: 'Number', description: 'One metric, big, with its trend.', icon: GaugeIcon, size: [3, 2], min: [2, 2], title: (w) => KPI_METRICS.find((m) => m.value === w.config.metric)?.label ?? 'Metric' },
-  health: { type: 'health', name: 'Stock compass', description: 'Health of every category at a glance.', icon: CompassIcon, size: [3, 5], min: [3, 4], title: () => 'Stock compass' },
-  brief: { type: 'brief', name: 'Morning brief', description: 'What changed and what needs you.', icon: SunHorizonIcon, size: [5, 5], min: [3, 4], title: () => 'Brief' },
-  approvals: { type: 'approvals', name: 'Approvals', description: 'Autopilot suggestions waiting for a yes.', icon: ListChecksIcon, size: [4, 5], min: [3, 4], title: () => 'Waiting for you' },
-  lowStock: { type: 'lowStock', name: 'Running low', description: 'Items that will run out first.', icon: HourglassMediumIcon, size: [4, 5], min: [3, 3], title: () => 'Running low' },
-  salesTrend: { type: 'salesTrend', name: 'Sales trend', description: 'Daily sales against the previous period.', icon: ChartLineUpIcon, size: [8, 5], min: [4, 4], title: (w) => `Sales · ${w.config.days ?? 30} days` },
-  topMovers: { type: 'topMovers', name: 'Best sellers', description: 'This week’s top items by revenue.', icon: TrendUpIcon, size: [4, 5], min: [3, 4], title: () => 'Best sellers · 7 days' },
-  categoryMix: { type: 'categoryMix', name: 'Stock by category', description: 'Where your money sits.', icon: StackIcon, size: [4, 5], min: [3, 4], title: () => 'Stock by category' },
-  expiry: { type: 'expiry', name: 'Expiry radar', description: 'Lots expiring soon, first-expired-first-out.', icon: SnowflakeIcon, size: [4, 5], min: [3, 3], title: () => 'Expiring soon' },
-  activity: { type: 'activity', name: 'Activity', description: 'Everything that happened, by whom.', icon: PulseIcon, size: [6, 5], min: [3, 3], title: () => 'Activity' },
-  locations: { type: 'locations', name: 'Locations', description: 'Stock value per location.', icon: MapPinIcon, size: [6, 4], min: [3, 3], title: () => 'Locations' },
-  incoming: { type: 'incoming', name: 'Incoming', description: 'Open purchase orders and when they land.', icon: TruckIcon, size: [6, 5], min: [3, 3], title: () => 'Incoming deliveries' },
-  note: { type: 'note', name: 'Note', description: 'A sticky note for the team.', icon: NoteIcon, size: [4, 3], min: [2, 2], title: (w) => w.title ?? 'Note' },
-  quickActions: { type: 'quickActions', name: 'Quick actions', description: 'Receive, count, scan — one tap away.', icon: LightningIcon, size: [4, 4], min: [3, 3], title: () => 'Quick actions' },
-  itemForecast: { type: 'itemForecast', name: 'Item forecast', description: 'Projected stock for one item.', icon: CalendarCheckIcon, size: [6, 5], min: [4, 4], title: (w, s) => s.items.find((i) => i.id === w.config.itemId)?.name ?? 'Item forecast' },
-  deadStock: { type: 'deadStock', name: 'Not moving', description: 'Money tied up in items that stopped selling.', icon: PackageIcon, size: [4, 5], min: [3, 3], title: () => 'Not moving' },
+  kpi: { type: 'kpi', name: tr('Number'), description: tr('One metric, big, with its trend.'), icon: GaugeIcon, size: [3, 2], min: [2, 2], title: (w) => KPI_METRICS.find((m) => m.value === w.config.metric)?.label ?? tr('Metric') },
+  health: { type: 'health', name: tr('Stock compass'), description: tr('Health of every category at a glance.'), icon: CompassIcon, size: [3, 5], min: [3, 4], title: () => tr('Stock compass') },
+  brief: { type: 'brief', name: tr('Morning brief'), description: tr('What changed and what needs you.'), icon: SunHorizonIcon, size: [5, 5], min: [3, 4], title: () => tr('Brief') },
+  approvals: { type: 'approvals', name: tr('Approvals'), description: tr('Autopilot suggestions waiting for a yes.'), icon: ListChecksIcon, size: [4, 5], min: [3, 4], title: () => tr('Waiting for you') },
+  lowStock: { type: 'lowStock', name: tr('Running low'), description: tr('Items that will run out first.'), icon: HourglassMediumIcon, size: [4, 5], min: [3, 3], title: () => tr('Running low') },
+  salesTrend: { type: 'salesTrend', name: tr('Sales trend'), description: tr('Daily sales against the previous period.'), icon: ChartLineUpIcon, size: [8, 5], min: [4, 4], title: (w) => tr('Sales · {0} days', Number(w.config.days ?? 30)) },
+  topMovers: { type: 'topMovers', name: tr('Best sellers'), description: tr('This week’s top items by revenue.'), icon: TrendUpIcon, size: [4, 5], min: [3, 4], title: () => tr('Best sellers · 7 days') },
+  categoryMix: { type: 'categoryMix', name: tr('Stock by category'), description: tr('Where your money sits.'), icon: StackIcon, size: [4, 5], min: [3, 4], title: () => tr('Stock by category') },
+  expiry: { type: 'expiry', name: tr('Expiry radar'), description: tr('Lots expiring soon, first-expired-first-out.'), icon: SnowflakeIcon, size: [4, 5], min: [3, 3], title: () => tr('Expiring soon') },
+  activity: { type: 'activity', name: tr('Activity'), description: tr('Everything that happened, by whom.'), icon: PulseIcon, size: [6, 5], min: [3, 3], title: () => tr('Activity') },
+  locations: { type: 'locations', name: tr('Locations'), description: tr('Stock value per location.'), icon: MapPinIcon, size: [6, 4], min: [3, 3], title: () => tr('Locations') },
+  incoming: { type: 'incoming', name: tr('Incoming'), description: tr('Open purchase orders and when they land.'), icon: TruckIcon, size: [6, 5], min: [3, 3], title: () => tr('Incoming deliveries') },
+  note: { type: 'note', name: tr('Note'), description: tr('A sticky note for the team.'), icon: NoteIcon, size: [4, 3], min: [2, 2], title: (w) => w.title ?? tr('Note') },
+  quickActions: { type: 'quickActions', name: tr('Quick actions'), description: tr('Receive, count, scan — one tap away.'), icon: LightningIcon, size: [4, 4], min: [3, 3], title: () => tr('Quick actions') },
+  itemForecast: { type: 'itemForecast', name: tr('Item forecast'), description: tr('Projected stock for one item.'), icon: CalendarCheckIcon, size: [6, 5], min: [4, 4], title: (w, s) => s.items.find((i) => i.id === w.config.itemId)?.name ?? tr('Item forecast') },
+  deadStock: { type: 'deadStock', name: tr('Not moving'), description: tr('Money tied up in items that stopped selling.'), icon: PackageIcon, size: [4, 5], min: [3, 3], title: () => tr('Not moving') },
 }
 
 /* ───────────────────────────── Frame ───────────────────────────── */
@@ -95,11 +96,11 @@ export function WidgetFrame({ title, icon, action, children, editing, onRemove, 
           <div className="flex items-center gap-0.5">
             {onConfigure && (
               <button type="button" onPointerDown={(e) => e.stopPropagation()} onClick={onConfigure} className="rounded-md px-1.5 py-0.5 text-[11.5px] text-ink-3 hover:bg-hover hover:text-ink">
-                Edit
+                {tr('Edit')}
               </button>
             )}
             {onRemove && (
-              <button type="button" aria-label="Remove widget" onPointerDown={(e) => e.stopPropagation()} onClick={onRemove} className="touch-target flex size-6 items-center justify-center rounded-md text-ink-3 hover:bg-bad-soft hover:text-bad-ink">
+              <button type="button" aria-label={tr('Remove widget')} onPointerDown={(e) => e.stopPropagation()} onClick={onRemove} className="touch-target flex size-6 items-center justify-center rounded-md text-ink-3 hover:bg-bad-soft hover:text-bad-ink">
                 <XIcon size={12} />
               </button>
             )}
@@ -138,19 +139,19 @@ function KpiWidget({ w }: { w: Widget }) {
     case 'stockValue':
       value = k.stockValue
       fmt = 'eur'
-      sub = <span className="text-ink-3">{eur(k.retailValue, { decimals: 0 })} at retail</span>
+      sub = <span className="text-ink-3">{tr('{0} at retail', eur(k.retailValue, { decimals: 0 }))}</span>
       break
     case 'retailValue':
       value = k.retailValue
       fmt = 'eur'
-      sub = <span className="text-ink-3">{eur(k.stockValue, { decimals: 0 })} at cost</span>
+      sub = <span className="text-ink-3">{tr('{0} at cost', eur(k.stockValue, { decimals: 0 }))}</span>
       break
     case 'revenue7':
       value = k.d7.revenue
       fmt = 'eur'
       sub = (
         <>
-          <Delta value={pctChange(k.d7.revenue, k.prev7.revenue)} /> <span className="text-ink-3">vs last week</span>
+          <Delta value={pctChange(k.d7.revenue, k.prev7.revenue)} /> <span className="text-ink-3">{tr('vs last week')}</span>
         </>
       )
       spark = series.map((d) => d.revenue)
@@ -160,47 +161,47 @@ function KpiWidget({ w }: { w: Widget }) {
       fmt = 'eur'
       sub = (
         <>
-          <Delta value={pctChange(k.d30.revenue, k.prev30.revenue)} /> <span className="text-ink-3">vs previous 30</span>
+          <Delta value={pctChange(k.d30.revenue, k.prev30.revenue)} /> <span className="text-ink-3">{tr('vs previous 30')}</span>
         </>
       )
       spark = salesSeries(s, 30).map((d) => d.revenue)
       break
     case 'unitsToday':
       value = Math.round(k.today.units)
-      sub = <span className="text-ink-3">{eur(k.today.revenue, { decimals: 0 })} so far today</span>
+      sub = <span className="text-ink-3">{tr('{0} so far today', eur(k.today.revenue, { decimals: 0 }))}</span>
       break
     case 'lowCount':
       value = k.low + k.out
-      sub = <span className="text-ink-3">{k.out ? `${k.out} out of stock` : 'none out of stock'}</span>
+      sub = <span className="text-ink-3">{k.out ? tr('{0} out of stock', k.out) : tr('none out of stock')}</span>
       break
     case 'outCount':
       value = k.out
-      sub = <span className="text-ink-3">still selling, no stock</span>
+      sub = <span className="text-ink-3">{tr('still selling, no stock')}</span>
       break
     case 'deadValue':
       value = k.deadValue
       fmt = 'eur'
-      sub = <span className="text-ink-3">{k.deadCount} items · {s.workspace.settings.deadStockDays}+ days</span>
+      sub = <span className="text-ink-3">{tr('{0} items · {1}+ days', k.deadCount, s.workspace.settings.deadStockDays)}</span>
       break
     case 'openPOValue':
       value = k.openPOValue
       fmt = 'eur'
-      sub = <span className="text-ink-3">{k.openPOCount} open orders</span>
+      sub = <span className="text-ink-3">{tr('{0} open orders', k.openPOCount)}</span>
       break
     case 'turnover':
       value = k.turnover
       decimals = 1
-      sub = <span className="text-ink-3">turns a year</span>
+      sub = <span className="text-ink-3">{tr('turns a year')}</span>
       break
     case 'health':
       value = k.health
-      sub = <span className="text-ink-3">out of 100</span>
+      sub = <span className="text-ink-3">{tr('out of 100')}</span>
       break
     case 'margin30': {
       const net = k.d30.revenue / 1.1
       value = net ? round(((net - k.d30.cogs) / net) * 100, 1) : 0
       decimals = 1
-      sub = <span className="text-ink-3">% gross, ex-VAT</span>
+      sub = <span className="text-ink-3">{tr('% gross, ex-VAT')}</span>
       break
     }
   }
@@ -247,7 +248,7 @@ export function StockCompass({ size = 200, className }: { size?: number; classNa
   const ticks = Array.from({ length: 72 }, (_, i) => i * 5)
   return (
     <div className={cn('relative', className)} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 512 512" width={size} height={size} role="img" aria-label={`Stock health ${health} out of 100`}>
+      <svg viewBox="0 0 512 512" width={size} height={size} role="img" aria-label={tr('Stock health {0} out of 100', health)}>
         {/* bezel: 72 bearings, the eight compass points longer */}
         {ticks.map((d) => {
           const major = d % 45 === 0
@@ -277,7 +278,7 @@ export function StockCompass({ size = 200, className }: { size?: number; classNa
         ) : (
           <>
             <span className="tabular text-[32px] leading-none font-medium tracking-[-0.05em] text-ink">{health}</span>
-            <span className="mt-1.5 font-mono text-[9.5px] tracking-[0.12em] text-ink-4 uppercase">Health</span>
+            <span className="mt-1.5 font-mono text-[9.5px] tracking-[0.12em] text-ink-4 uppercase">{tr('Health')}</span>
           </>
         )}
       </div>
@@ -299,17 +300,17 @@ function HealthWidget() {
         <StackedBar
           height={4}
           segments={[
-            { key: 'h', value: counts.healthy, color: 'var(--gray-a8)', label: 'Healthy' },
-            { key: 'l', value: counts.low, color: 'var(--amber-9)', label: 'Reorder' },
-            { key: 'c', value: counts.critical + counts.out, color: 'var(--red-9)', label: 'Critical' },
-            { key: 'o', value: counts.over, color: 'var(--blue-9)', label: 'Overstock' },
-            { key: 'd', value: counts.dead, color: 'var(--violet-9)', label: 'Not moving' },
+            { key: 'h', value: counts.healthy, color: 'var(--gray-a8)', label: tr('Healthy') },
+            { key: 'l', value: counts.low, color: 'var(--amber-9)', label: tr('Reorder') },
+            { key: 'c', value: counts.critical + counts.out, color: 'var(--red-9)', label: tr('Critical') },
+            { key: 'o', value: counts.over, color: 'var(--blue-9)', label: tr('Overstock') },
+            { key: 'd', value: counts.dead, color: 'var(--violet-9)', label: tr('Not moving') },
           ]}
         />
         <div className="mt-2.5 grid grid-cols-3 text-[11px] text-ink-3">
-          <span><b className="tabular font-medium text-ink">{counts.healthy}</b> healthy</span>
-          <span className="text-center"><b className="tabular font-medium text-ink">{counts.low + counts.critical + counts.out}</b> need stock</span>
-          <span className="text-right"><b className="tabular font-medium text-ink">{counts.dead + counts.over}</b> too much</span>
+          <span><b className="tabular font-medium text-ink">{counts.healthy}</b> {tr('healthy')}</span>
+          <span className="text-center"><b className="tabular font-medium text-ink">{counts.low + counts.critical + counts.out}</b> {tr('need stock')}</span>
+          <span className="text-right"><b className="tabular font-medium text-ink">{counts.dead + counts.over}</b> {tr('too much')}</span>
         </div>
       </div>
     </div>
@@ -357,7 +358,7 @@ export function ApprovalsList({ limit = 6, compact }: { limit?: number; compact?
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
         <CheckIcon size={18} className="text-ok" />
-        <p className="text-[13px] text-ink-3">Nothing waiting. Autopilot checks again every hour.</p>
+        <p className="text-[13px] text-ink-3">{tr('Nothing waiting. Autopilot checks again every hour.')}</p>
       </div>
     )
   return (
@@ -373,9 +374,9 @@ export function ApprovalsList({ limit = 6, compact }: { limit?: number; compact?
             <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
-                aria-label={`Dismiss ${p.title}`}
+                aria-label={tr('Dismiss {0}', p.title)}
                 onClick={() => void commit(dismissProposal(p))}
-                title="Dismiss"
+                title={tr('Dismiss')}
                 className="touch-target flex size-7 items-center justify-center rounded-[8px] text-ink-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-ink focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
               >
                 <XIcon size={12} />
@@ -386,8 +387,8 @@ export function ApprovalsList({ limit = 6, compact }: { limit?: number; compact?
                   const r = approveProposal(s, p, actor)
                   void commit(r.cs, { success: r.message })
                 }}
-                aria-label={`Approve ${p.title}`}
-                title="Approve"
+                aria-label={tr('Approve {0}', p.title)}
+                title={tr('Approve')}
                 className="press touch-target flex size-7 items-center justify-center rounded-[8px] bg-hover text-ink shadow-[inset_0_0_0_1px_var(--gray-a4)] hover:bg-ink hover:text-inverse"
               >
                 <CheckIcon size={13} weight="bold" />
@@ -399,7 +400,7 @@ export function ApprovalsList({ limit = 6, compact }: { limit?: number; compact?
       {pending.length > limit && (
         <li className="pt-2">
           <button type="button" onClick={() => navigate('/app/approvals')} className="text-[12px] text-ink-3 hover:text-ink">
-            +{pending.length - limit} more
+            {tr('+{0} more', pending.length - limit)}
           </button>
         </li>
       )}
@@ -417,7 +418,7 @@ function LowStockWidget({ w }: { w: Widget }) {
     .stats.filter((x) => (x.status === 'out' || x.status === 'critical' || x.status === 'low') && (!loc || (x.byLocation[loc] ?? 0) <= x.reorderPoint))
     .sort((a, b) => a.cover - b.cover)
     .slice(0, Number(w.config.limit ?? 8))
-  if (!list.length) return <p className="pt-6 text-center text-[13px] text-ink-3">Every item is covered past its next delivery.</p>
+  if (!list.length) return <p className="pt-6 text-center text-[13px] text-ink-3">{tr('Every item is covered past its next delivery.')}</p>
   return (
     <ul className="flex flex-col">
       {list.map((x) => (
@@ -427,8 +428,8 @@ function LowStockWidget({ w }: { w: Widget }) {
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[12.5px] text-ink">{x.item.name}</span>
               <span className="tabular block text-[11px] text-ink-3">
-                {fmtQty(x.onHand, x.item.unit)} · {Number.isFinite(x.cover) ? (x.cover < 1 ? '<1 day' : `${Math.floor(x.cover)} days`) : '—'}
-                {x.onOrder ? ` · ${x.onOrder} on order` : ''}
+                {fmtQty(x.onHand, x.item.unit)} · {Number.isFinite(x.cover) ? (x.cover < 1 ? tr('<1 day') : tr('{0} days', Math.floor(x.cover))) : '—'}
+                {x.onOrder ? tr(' · {0} on order', x.onOrder) : ''}
               </span>
             </span>
             <Badge tone={STATUS_META[x.status].tone}>{STATUS_META[x.status].label}</Badge>
@@ -444,7 +445,7 @@ function ExpiryWidget() {
   const { navigate } = useActions()
   const loc = indexBy(s.locations, (l) => l.id)
   const list = expiringBatches(s, Math.max(7, s.workspace.settings.expiryWarnDays)).slice(0, 8)
-  if (!list.length) return <p className="pt-6 text-center text-[13px] text-ink-3">Nothing expires this week.</p>
+  if (!list.length) return <p className="pt-6 text-center text-[13px] text-ink-3">{tr('Nothing expires this week.')}</p>
   return (
     <ul className="flex flex-col">
       {list.map((x) => (
@@ -456,7 +457,7 @@ function ExpiryWidget() {
                 {x.batch.code} · {loc[x.batch.locationId]?.name} · {fmtQty(x.batch.qty, x.item.unit)}
               </span>
             </span>
-            <Badge tone={x.days <= 1 ? 'bad' : x.days <= 3 ? 'warn' : 'neutral'}>{x.days <= 0 ? 'Today' : x.days === 1 ? 'Tomorrow' : `${x.days} days`}</Badge>
+            <Badge tone={x.days <= 1 ? 'bad' : x.days <= 3 ? 'warn' : 'neutral'}>{x.days <= 0 ? tr('Today') : x.days === 1 ? tr('Tomorrow') : tr('{0} days', x.days)}</Badge>
           </button>
         </li>
       ))}
@@ -470,10 +471,10 @@ function DeadStockWidget() {
   const list = derive(s)
     .stats.filter((x) => x.status === 'dead')
     .sort((a, b) => b.value - a.value)
-  if (!list.length) return <p className="pt-6 text-center text-[13px] text-ink-3">Everything is moving.</p>
+  if (!list.length) return <p className="pt-6 text-center text-[13px] text-ink-3">{tr('Everything is moving.')}</p>
   return (
     <BarList
-      rows={list.slice(0, 7).map((x) => ({ key: x.item.id, label: x.item.name, value: x.value, hue: 290, hint: x.lastSaleAt ? relative(x.lastSaleAt) : 'never', onClick: () => navigate(`/app/items/${x.item.id}`) }))}
+      rows={list.slice(0, 7).map((x) => ({ key: x.item.id, label: x.item.name, value: x.value, hue: 290, hint: x.lastSaleAt ? relative(x.lastSaleAt) : tr('never'), onClick: () => navigate(`/app/items/${x.item.id}`) }))}
       format={(v) => eur(v, { decimals: 0 })}
     />
   )
@@ -525,7 +526,7 @@ function LocationsWidget() {
             <div className="mt-2 h-1 overflow-hidden rounded-full bg-hover">
               <div className={cn('h-full rounded-full', r.value === max ? 'bg-accent' : 'bg-[var(--gray-a8)]')} style={{ width: `${(r.value / max) * 100}%` }} />
             </div>
-            <div className="tabular mt-1.5 text-[11px] text-ink-3">{num(r.units)} units · {r.location.kind}</div>
+            <div className="tabular mt-1.5 text-[11px] text-ink-3">{tr('{0} units · {1}', num(r.units), r.location.kind)}</div>
           </div>
         </div>
       ))}
@@ -539,7 +540,7 @@ function IncomingWidget() {
   const sup = indexBy(s.suppliers, (x) => x.id)
   const list = incomingOrders(s)
   const drafts = s.orders.filter((o) => o.status === 'draft')
-  if (!list.length && !drafts.length) return <p className="pt-6 text-center text-[13px] text-ink-3">No deliveries on the way.</p>
+  if (!list.length && !drafts.length) return <p className="pt-6 text-center text-[13px] text-ink-3">{tr('No deliveries on the way.')}</p>
   return (
     <ul className="flex flex-col">
       {[...list, ...drafts].slice(0, 7).map((po) => {
@@ -554,10 +555,10 @@ function IncomingWidget() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[12.5px] text-ink">{sup[po.supplierId]?.name}</span>
                 <span className="block text-[11px] text-ink-3">
-                  {po.number} · {po.lines.length} lines · {eur(poTotal(po), { decimals: 0 })}
+                  {tr('{0} · {1} lines · {2}', po.number, po.lines.length, eur(poTotal(po), { decimals: 0 }))}
                 </span>
               </span>
-              {po.status === 'draft' ? <Badge tone="muted">Draft</Badge> : today ? <Badge tone="accent" dot>Today</Badge> : <Badge tone="info">{po.status === 'partial' ? 'Partial' : 'Sent'}</Badge>}
+              {po.status === 'draft' ? <Badge tone="muted">{tr('Draft')}</Badge> : today ? <Badge tone="accent" dot>{tr('Today')}</Badge> : <Badge tone="info">{po.status === 'partial' ? tr('Partial') : tr('Sent')}</Badge>}
             </button>
           </li>
         )
@@ -605,10 +606,10 @@ function SalesTrendWidget({ w }: { w: Widget }) {
       <div className="flex items-baseline gap-2">
         <AnimatedNumber value={total} format="eur" compact className="text-[26px] leading-none font-medium tracking-[-0.04em] text-ink" />
         <Delta value={ptotal ? ((total - ptotal) / ptotal) * 100 : 0} />
-        <span className="text-[12px] text-ink-3">vs previous {days} days</span>
+        <span className="text-[12px] text-ink-3">{tr('vs previous {0} days', days)}</span>
       </div>
       <div className="mt-2 min-h-0 flex-1">
-        <AreaChart data={cur.map((d, i) => ({ label: d.day, value: d.revenue, secondary: prev[i]?.revenue }))} height={Math.max(110, 0)} xFormat={(l) => date(l, 'short')} format={(v) => eur(v, { decimals: 0, compact: true })} primaryLabel="Sales" secondaryLabel="Previous" className="h-full" />
+        <AreaChart data={cur.map((d, i) => ({ label: d.day, value: d.revenue, secondary: prev[i]?.revenue }))} height={Math.max(110, 0)} xFormat={(l) => date(l, 'short')} format={(v) => eur(v, { decimals: 0, compact: true })} primaryLabel={tr('Sales')} secondaryLabel={tr('Previous')} className="h-full" />
       </div>
     </div>
   )
@@ -618,17 +619,17 @@ function ItemForecastWidget({ w }: { w: Widget }) {
   const s = useSnapshot()
   const id = String(w.config.itemId ?? s.items[0]?.id)
   const st = itemStats(s, id)
-  if (!st) return <p className="text-[13px] text-ink-3">Pick an item in Edit.</p>
+  if (!st) return <p className="text-[13px] text-ink-3">{tr('Pick an item in Edit.')}</p>
   const p = projection(s, id, 21)
   const out = p.find((d) => d.level <= 0)
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 text-[12px] text-ink-3">
-        <span className="tabular text-ink">{fmtQty(st.onHand, st.item.unit)}</span> on hand ·{' '}
-        {out ? <span className="text-bad-ink">runs out {date(out.day, 'short')}</span> : <span className="text-ok-ink">covered 3 weeks</span>}
+        <span className="tabular text-ink">{fmtQty(st.onHand, st.item.unit)}</span> {tr('on hand ·')}
+        {out ? <span className="text-bad-ink">{tr('runs out {0}', date(out.day, 'short'))}</span> : <span className="text-ok-ink">{tr('covered 3 weeks')}</span>}
       </div>
       <div className="mt-2 min-h-0 flex-1">
-        <AreaChart data={p.map((d) => ({ label: d.day, value: d.level, secondary: d.units, marker: d.holiday }))} height={130} xFormat={(l) => date(l, 'short')} format={(v) => num(v)} primaryLabel="Stock" secondaryLabel="Demand" threshold={{ value: st.reorderPoint, label: 'reorder' }} />
+        <AreaChart data={p.map((d) => ({ label: d.day, value: d.level, secondary: d.units, marker: d.holiday }))} height={130} xFormat={(l) => date(l, 'short')} format={(v) => num(v)} primaryLabel={tr('Stock')} secondaryLabel={tr('Demand')} threshold={{ value: st.reorderPoint, label: tr('reorder') }} />
       </div>
     </div>
   )
@@ -641,8 +642,8 @@ function NoteWidget({ w, onChange }: { w: Widget; onChange?: (w: Widget) => void
       value={text}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => text !== w.config.text && onChange?.({ ...w, config: { ...w.config, text } })}
-      placeholder="Write a note for the team…"
-      aria-label="Note"
+      placeholder={tr('Write a note for the team…')}
+      aria-label={tr('Note')}
       className="h-full w-full resize-none bg-transparent text-[13.5px] leading-relaxed text-ink outline-none placeholder:text-ink-4"
     />
   )
@@ -651,12 +652,12 @@ function NoteWidget({ w, onChange }: { w: Widget; onChange?: (w: Widget) => void
 function QuickActionsWidget() {
   const { navigate } = useActions()
   const items = [
-    { label: 'Receive', icon: <TrayArrowDownIcon size={18} />, to: '/app/receive' },
-    { label: 'Count', icon: <ClipboardTextIcon size={18} />, to: '/app/counts' },
-    { label: 'Scan', icon: <BarcodeIcon size={18} />, to: '/app/scan' },
-    { label: 'New item', icon: <PlusIcon size={18} />, to: '/app/items?new=1' },
-    { label: 'Orders', icon: <TruckIcon size={18} />, to: '/app/orders' },
-    { label: 'Reports', icon: <SquaresFourIcon size={18} />, to: '/app/insights' },
+    { label: tr('Receive'), icon: <TrayArrowDownIcon size={18} />, to: '/app/receive' },
+    { label: tr('Count'), icon: <ClipboardTextIcon size={18} />, to: '/app/counts' },
+    { label: tr('Scan'), icon: <BarcodeIcon size={18} />, to: '/app/scan' },
+    { label: tr('New item'), icon: <PlusIcon size={18} />, to: '/app/items?new=1' },
+    { label: tr('Orders'), icon: <TruckIcon size={18} />, to: '/app/orders' },
+    { label: tr('Reports'), icon: <SquaresFourIcon size={18} />, to: '/app/insights' },
   ]
   return (
     <div className="grid h-full grid-cols-3 gap-2">
@@ -711,13 +712,13 @@ export function WidgetBody({ w, onChange }: { w: Widget; onChange?: (w: Widget) 
 
 export function widgetAction(w: Widget, navigate: (to: string) => void): ReactNode {
   const map: Partial<Record<WidgetType, [string, string]>> = {
-    approvals: ['/app/approvals', 'All'],
-    lowStock: ['/app/items?status=low', 'All'],
-    incoming: ['/app/orders', 'Orders'],
-    activity: ['/app/movements', 'Ledger'],
-    expiry: ['/app/items?status=expiring', 'All'],
-    deadStock: ['/app/insights', 'Report'],
-    topMovers: ['/app/insights', 'Report'],
+    approvals: ['/app/approvals', tr('All')],
+    lowStock: ['/app/items?status=low', tr('All')],
+    incoming: ['/app/orders', tr('Orders')],
+    activity: ['/app/movements', tr('Ledger')],
+    expiry: ['/app/items?status=expiring', tr('All')],
+    deadStock: ['/app/insights', tr('Report')],
+    topMovers: ['/app/insights', tr('Report')],
   }
   const m = map[w.type]
   return m ? <Mini onClick={() => navigate(m[0])}>{m[1]}</Mini> : null

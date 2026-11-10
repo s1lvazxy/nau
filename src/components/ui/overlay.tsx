@@ -5,6 +5,7 @@ import { Popover as BPopover } from '@base-ui/react/popover'
 import { Tooltip as BTooltip } from '@base-ui/react/tooltip'
 import { XIcon } from '@phosphor-icons/react'
 import { cn } from '~/lib/utils'
+import { tr } from '~/i18n'
 
 /* ───────────── Modal dialog (centered; scale from 0.97, never from 0) ───────────── */
 
@@ -37,7 +38,7 @@ export function Modal({ open, onOpenChange, title, description, children, footer
               <BDialog.Title className="text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</BDialog.Title>
               {description && <BDialog.Description className="mt-0.5 text-[13px] text-ink-3">{description}</BDialog.Description>}
             </div>
-            <BDialog.Close aria-label="Close" className="touch-target -mr-1.5 flex size-7 items-center justify-center rounded-md text-ink-3 hover:bg-hover hover:text-ink">
+            <BDialog.Close aria-label={tr('Close')} className="touch-target -mr-1.5 flex size-7 items-center justify-center rounded-md text-ink-3 hover:bg-hover hover:text-ink">
               <XIcon size={14} />
             </BDialog.Close>
           </div>
@@ -70,7 +71,7 @@ export function Sheet({ open, onOpenChange, title, description, children, footer
                 <BDialog.Title className="truncate text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</BDialog.Title>
                 {description && <BDialog.Description className="mt-0.5 text-[12.5px] text-ink-3">{description}</BDialog.Description>}
               </div>
-              <BDialog.Close aria-label="Close" className="touch-target -mr-1.5 flex size-7 items-center justify-center rounded-md text-ink-3 hover:bg-hover hover:text-ink">
+              <BDialog.Close aria-label={tr('Close')} className="touch-target -mr-1.5 flex size-7 items-center justify-center rounded-md text-ink-3 hover:bg-hover hover:text-ink">
                 <XIcon size={14} />
               </BDialog.Close>
             </div>

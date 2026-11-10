@@ -1,12 +1,13 @@
 import type { ExtDocument } from '~/ingest/types'
 import { ConnectorError, request } from '../http'
 import { num, since, type Connector, type Ctx } from '../types'
+import { tr } from '~/i18n'
 
 const API = 'https://api.sumup.com'
 const call = <T>(ctx: Ctx, path: string, query: Record<string, any> = {}) => request<T>(`${API}${path}`, { query, headers: { authorization: `Bearer ${ctx.creds.apiKey}` } })
 const merchant = (ctx: Ctx) => {
   const code = ctx.creds.merchantCode?.trim()
-  if (!/^[A-Z0-9]{4,16}$/i.test(code ?? '')) throw new ConnectorError('The merchant code looks like MXXXXXXX — it is on your SumUp profile.')
+  if (!/^[A-Z0-9]{4,16}$/i.test(code ?? '')) throw new ConnectorError(tr('The merchant code looks like MXXXXXXX — it is on your SumUp profile.'))
   return code.toUpperCase()
 }
 

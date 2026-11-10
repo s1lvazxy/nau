@@ -66,6 +66,7 @@ In Supabase Auth:
 | `ANTHROPIC_API_KEY` | Operator with the model, standing rules, reading invoices and photos, column mapping | Optional. Without it Operator uses its built-in engine and rules do not run. |
 | `NAU_AGENT_MODEL` | | Optional model id. |
 | `ANTHROPIC_BASE_URL` | | Optional: send model calls through your own gateway or proxy. |
+| `RESEND_API_KEY`, `NAU_MAIL_FROM` | emailing purchase orders to suppliers | Optional, both or neither. See [Email](#email). |
 
 `VITE_*` values are public by design (they ship to every browser). Everything else stays on the server.
 
@@ -92,7 +93,26 @@ Nothing runs by itself until something calls the tick. Every five minutes:
 curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://stock.empresa.pt/api/cron/tick
 ```
 
-`docker-compose.yml` includes a service that does this. Any scheduler works: cron, systemd timers, Kubernetes CronJob, or `pg_cron` with `pg_net` inside Supabase. A tick syncs connections that are due, runs autopilot and standing rules for each workspace about once an hour, and delivers webhooks. It is bounded to about a minute; whatever is left waits for the next one.
+`docker-compose.yml` includes a service that does this. Any scheduler works: cron, systemd timers, Kubernetes CronJob, or `pg_cron` with `pg_net` inside Supabase. A tick syncs connections that are due, runs autopilot and standing rules for each workspace about once an hour, sends queued order emails, and delivers webhooks. It is bounded to about a minute; whatever is left waits for the next one.
+
+### Email
+
+Out of the box Nau sends no email of its own: “Send to supplier” opens the order in the person’s mail app, already written. To have the installation send orders itself, set two variables and restart:
+
+```bash
+RESEND_API_KEY=re_…                                  # from resend.com
+NAU_MAIL_FROM="Compras <compras@a-tua-empresa.pt>"   # a sender on a domain you verified in Resend
+```
+
+Then:
+
+- the button on an order becomes “Email to supplier”, and the order shows whether the email went out, when, or why it did not (with a retry);
+- an order Operator sends inside the limits of its policy goes out too, on the same run;
+- replies go to the person who pressed send (`Reply-To`), or to the workspace owner when Operator sent it;
+- an order goes out once: each attempt carries an idempotency key, and one that waited more than a day in the queue is marked as failed instead of surprising the supplier;
+- Settings → Business shows which of the two modes the installation is in.
+
+Sign-in emails (confirmation, password reset, magic link) are sent by Supabase Auth, not by Nau. In your Supabase project, under Authentication → SMTP, you can point them at Resend as well (`smtp.resend.com`, port 465, user `resend`, the API key as password).
 
 ## Backups and upgrades
 
@@ -106,6 +126,8 @@ curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://stock.empresa.
 - **Who gets in**: Supabase Auth (open sign-up, invitation-only, Google, SSO on Supabase plans that have it).
 - **What Operator may do alone**: per workspace, in Autopilot.
 - **Systems**: add a connector (`docs/connectors.md`) or post to the API (`docs/api.md`).
-- **The website** at `/` is separate from the app at `/app`; replace or remove it for an internal installation.
+- **Language**: Portuguese (Portugal) and English. Each person chooses in the header or under Settings → Appearance; a first visit to `/` is in Portuguese and to `/en` in English.
+- **Order email**: off until you set the two Resend variables above.
+- **The website** at `/` is separate from the app at `/app`; replace or remove it for an internal installation. `pnpm build:site` builds it alone as static files, which is how the project's own site is published to GitHub Pages.
 
 The licence is AGPL-3.0: if you change Nau and offer it to others over a network, publish your changes under the same licence.

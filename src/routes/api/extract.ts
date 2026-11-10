@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
 import { authorizeModelCall, json, sameOrigin } from '~/server/guard'
+import { tr } from '~/i18n'
 
 const MODEL = process.env.NAU_AGENT_MODEL || 'claude-opus-5-5'
 
@@ -49,12 +50,12 @@ export const Route = createFileRoute('/api/extract')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!process.env.ANTHROPIC_API_KEY) return json({ error: 'Document reading needs the Operator model. Add ANTHROPIC_API_KEY.' }, 503)
-        if (!sameOrigin(request)) return json({ error: 'Forbidden' }, 403)
+        if (!process.env.ANTHROPIC_API_KEY) return json({ error: tr('Document reading needs the Operator model. Add ANTHROPIC_API_KEY.') }, 503)
+        if (!sameOrigin(request)) return json({ error: tr('Forbidden') }, 403)
         const auth = await authorizeModelCall(request, 'extract')
         if (!auth.ok) return auth.res
         const parsed = Body.safeParse(await request.json().catch(() => null))
-        if (!parsed.success) return json({ error: 'Invalid document' }, 400)
+        if (!parsed.success) return json({ error: tr('Invalid document') }, 400)
         const { data, mediaType, catalogue, mode } = parsed.data
         const client = new Anthropic()
         const doc: Anthropic.Beta.BetaContentBlockParam =
@@ -71,7 +72,7 @@ export const Route = createFileRoute('/api/extract')({
               fallbacks: 'default',
               messages: [{ role: 'user', content: [doc, { type: 'text', text: 'This is a photo of shelves, a counter or a stockroom in a Portuguese shop, café or restaurant. List every distinct product you can identify from its label, once each, with how many units are visible. Count only what you can see; do not guess what is behind. Skip anything whose label you cannot read. Names in Portuguese as printed.' }] }],
             })
-            if (shelf.stop_reason === 'refusal' || !shelf.parsed_output) return json({ error: 'Couldn’t read that photo. Try one taken straight on, with the labels in focus.' }, 422)
+            if (shelf.stop_reason === 'refusal' || !shelf.parsed_output) return json({ error: tr('Couldn’t read that photo. Try one taken straight on, with the labels in focus.') }, 422)
             return json(shelf.parsed_output)
           }
           const res = await client.beta.messages.parse({
@@ -93,11 +94,11 @@ export const Route = createFileRoute('/api/extract')({
               },
             ],
           })
-          if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'Couldn’t read that document. Try a sharper photo.' }, 422)
+          if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: tr('Couldn’t read that document. Try a sharper photo.') }, 422)
           return json(res.parsed_output)
         } catch (e) {
           console.error('[extract]', e)
-          return json({ error: e instanceof Anthropic.RateLimitError ? 'Busy — try again in a minute.' : 'Couldn’t read that document.' }, 502)
+          return json({ error: e instanceof Anthropic.RateLimitError ? tr('Busy — try again in a minute.') : tr('Couldn’t read that document.') }, 502)
         }
       },
     },

@@ -10,6 +10,7 @@ import { ConnectorError } from '~/connectors/http'
 import type { Creds, Ctx } from '~/connectors/types'
 import { open, seal, token } from './crypto'
 import { admin, commit, load } from './db'
+import { tr } from '~/i18n'
 
 export interface IntegrationRow {
   id: string
@@ -47,7 +48,7 @@ export function view(row: IntegrationRow, origin: string) {
 export type IntegrationView = ReturnType<typeof view>
 
 const ctxFor = (creds: Creds, row: Pick<IntegrationRow, 'cursor' | 'config'>, region: Ctx['region']): Ctx => ({ creds, cursor: row.cursor ?? {}, historyDays: Number(row.config?.historyDays ?? 90), now: new Date(), region })
-const say = (e: unknown) => (e instanceof ConnectorError ? e.message : e instanceof Error ? e.message.slice(0, 300) : 'Something went wrong')
+const say = (e: unknown) => (e instanceof ConnectorError ? e.message : e instanceof Error ? e.message.slice(0, 300) : tr('Something went wrong'))
 
 export async function list(workspaceId: string, origin: string) {
   const { data, error } = await admin().from('integrations').select('*').eq('workspace_id', workspaceId).neq('connector', 'api').order('created_at')
@@ -59,7 +60,7 @@ async function row(workspaceId: string | null, id: string): Promise<IntegrationR
   let q = admin().from('integrations').select('*').eq('id', id)
   if (workspaceId) q = q.eq('workspace_id', workspaceId)
   const { data } = await q.maybeSingle()
-  if (!data) throw new ConnectorError('That connection no longer exists.', 404)
+  if (!data) throw new ConnectorError(tr('That connection no longer exists.'), 404)
   return data as IntegrationRow
 }
 
@@ -67,12 +68,12 @@ async function row(workspaceId: string | null, id: string): Promise<IntegrationR
 export async function connect(workspaceId: string, userId: string, connectorId: string, fields: Record<string, string>, origin: string) {
   const meta = connectorMeta(connectorId)
   const impl = IMPL[connectorId as ConnectorMeta['id']]
-  if (!meta || !impl || meta.status !== 'beta') throw new ConnectorError('That system is not available yet.')
+  if (!meta || !impl || meta.status !== 'beta') throw new ConnectorError(tr('That system is not available yet.'))
   const creds: Creds = {}
   for (const f of meta.fields) {
     const v = String(fields[f.key] ?? '').trim()
-    if (!v && !f.optional) throw new ConnectorError(`${f.label} is missing.`)
-    if (v.length > 2000) throw new ConnectorError(`${f.label} is too long.`)
+    if (!v && !f.optional) throw new ConnectorError(tr('{0} is missing.', f.label))
+    if (v.length > 2000) throw new ConnectorError(tr('{0} is too long.', f.label))
     if (v) creds[f.key] = v
   }
   const { data: ws } = await admin().from('workspaces').select('region').eq('id', workspaceId).single()
@@ -119,11 +120,11 @@ export async function applyBatch(workspaceId: string, integrationId: string, bat
   const result = ingest(snapshot, batch, { ...o, actor, links: await linksOf(integrationId) })
   if (!isEmpty(result.cs)) {
     const r = result.report
-    const lines = [r.products.created && `${r.products.created} new items`, r.products.updated && `${r.products.updated} items updated`, r.documents.sales && `${r.documents.sales} sales`, r.documents.refunds && `${r.documents.refunds} returns`, r.documents.purchases && `${r.documents.purchases} deliveries${o.postPurchases ? '' : ' waiting in Receive'}`, r.stockSet && `${r.stockSet} stock levels set`, r.negative && `${Math.round(r.negative)} units sold without stock behind them`].filter(Boolean) as string[]
+    const lines = [r.products.created && tr('{0} new items', r.products.created), r.products.updated && tr('{0} items updated', r.products.updated), r.documents.sales && `${r.documents.sales} sales`, r.documents.refunds && `${r.documents.refunds} returns`, r.documents.purchases && `${r.documents.purchases} deliveries${o.postPurchases ? '' : tr(' waiting in Receive')}`, r.stockSet && tr('{0} stock levels set', r.stockSet), r.negative && tr('{0} units sold without stock behind them', Math.round(r.negative))].filter(Boolean) as string[]
     // A whole first import is too much to carry as one undo; ordinary syncs can be taken back from the journal
     const undo = (result.cs.movements?.length ?? 0) <= 2000 ? undoSpec(snapshot, result.cs) : null
     const at = new Date().toISOString()
-    const action: AgentAction = { id: uid(), kind: o.kind, risk: 'reversible', title: `${o.label}: ${lines.slice(0, 2).join(', ') || 'updated'}`, lines, impactEur: null, cs: {}, undo: undo && isUndoable(undo) ? undo : null, status: 'applied', source: o.kind === 'api' ? 'api' : 'integration', actor, approvedBy: null, reason: 'Facts from a system you connected', link: '/app/integrations', createdAt: at, resolvedAt: at }
+    const action: AgentAction = { id: uid(), kind: o.kind, risk: 'reversible', title: `${o.label}: ${lines.slice(0, 2).join(', ') || tr('updated')}`, lines, impactEur: null, cs: {}, undo: undo && isUndoable(undo) ? undo : null, status: 'applied', source: o.kind === 'api' ? 'api' : 'integration', actor, approvedBy: null, reason: tr('Facts from a system you connected'), link: '/app/integrations', createdAt: at, resolvedAt: at }
     await commit(workspaceId, mergeChangeSets(result.cs, { upserts: { actions: [action] } }))
   }
   for (let i = 0; i < result.links.length; i += 500) {
@@ -141,7 +142,7 @@ export async function sync(id: string, opts: { workspaceId?: string; batch?: Ing
   const r = await row(opts.workspaceId ?? null, id)
   const meta = connectorMeta(r.connector)
   const impl = IMPL[r.connector as ConnectorMeta['id']]
-  if (!meta || !impl) throw new ConnectorError('That system is not available.')
+  if (!meta || !impl) throw new ConnectorError(tr('That system is not available.'))
   try {
     const { data: ws } = await admin().from('workspaces').select('region').eq('id', r.workspace_id).single()
     const creds = open<Creds>(r.secrets)
@@ -162,7 +163,7 @@ export async function sync(id: string, opts: { workspaceId?: string; batch?: Ing
 export async function pushStock(workspaceId: string, id: string) {
   const r = await row(workspaceId, id)
   const impl = IMPL[r.connector as ConnectorMeta['id']]
-  if (!impl?.pushStock) throw new ConnectorError('This system does not take stock from Nau.')
+  if (!impl?.pushStock) throw new ConnectorError(tr('This system does not take stock from Nau.'))
   const snapshot = await load(workspaceId)
   const onHand = new Map<string, number>()
   for (const l of snapshot.levels) onHand.set(l.itemId, (onHand.get(l.itemId) ?? 0) + l.onHand)

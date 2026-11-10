@@ -4,9 +4,10 @@ import { AuthShell } from '~/components/auth/shell'
 import { Button } from '~/components/ui/button'
 import { Field, Input } from '~/components/ui/form'
 import { useSession } from '~/data/store'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/reset-password')({
-  head: () => ({ meta: [{ title: 'Nova password — Nau' }] }),
+  head: () => ({ meta: [{ title: tr('Nova password — Nau') }] }),
   component: Reset,
 })
 
@@ -19,8 +20,8 @@ function Reset() {
   const [error, setError] = useState<string | null>(null)
   useEffect(() => void init(), [init])
   const submit = async () => {
-    if (pw.length < 10) return setError('Usa pelo menos 10 caracteres')
-    if (pw !== pw2) return setError('As passwords não coincidem')
+    if (pw.length < 10) return setError(tr('Usa pelo menos 10 caracteres'))
+    if (pw !== pw2) return setError(tr('As passwords não coincidem'))
     setBusy(true)
     setError(null)
     try {
@@ -28,13 +29,13 @@ function Reset() {
       const ws = await useSession.getState().refreshWorkspaces()
       void navigate({ to: ws.length ? '/app' : '/onboarding' })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível atualizar a password')
+      setError(e instanceof Error ? e.message : tr('Não foi possível atualizar a password'))
     } finally {
       setBusy(false)
     }
   }
   return (
-    <AuthShell title="Escolhe uma nova password" subtitle="Entras logo a seguir.">
+    <AuthShell title={tr('Escolhe uma nova password')} subtitle={tr('Entras logo a seguir.')}>
       <form
         className="flex flex-col gap-4"
         onSubmit={(e) => {
@@ -43,14 +44,14 @@ function Reset() {
         }}
         noValidate
       >
-        <Field label="Nova password" htmlFor="pw" hint="Pelo menos 10 caracteres.">
+        <Field label={tr('Nova password')} htmlFor="pw" hint={tr('Pelo menos 10 caracteres.')}>
           <Input id="pw" type="password" autoComplete="new-password" inputSize="lg" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus />
         </Field>
-        <Field label="Repete-a" htmlFor="pw2" error={error}>
+        <Field label={tr('Repete-a')} htmlFor="pw2" error={error}>
           <Input id="pw2" type="password" autoComplete="new-password" inputSize="lg" value={pw2} onChange={(e) => setPw2(e.target.value)} aria-invalid={!!error} />
         </Field>
         <Button type="submit" variant="primary" size="lg" loading={busy} className="w-full">
-          Guardar e entrar
+          {tr('Guardar e entrar')}
         </Button>
       </form>
     </AuthShell>

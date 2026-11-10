@@ -1,6 +1,7 @@
 import type { ExtDocument, ExtProduct } from '~/ingest/types'
 import { ConnectorError, request } from '../http'
 import { catalogDue, gross, isoDay, num, type Connector, type Creds, type Ctx } from '../types'
+import { tr } from '~/i18n'
 
 const API = 'https://api.moloni.pt/v1'
 /** Sales documents that move stock, and the one that brings it back. */
@@ -28,9 +29,9 @@ const call = <T>(access: string, path: string, form: Record<string, string | num
 
 async function companyId(ctx: Ctx, access: string): Promise<{ id: number; name: string }> {
   const list = await call<{ company_id: number; name: string }[]>(access, 'companies/getAll', {})
-  if (!Array.isArray(list) || !list.length) throw new ConnectorError('This Moloni user has no company.')
+  if (!Array.isArray(list) || !list.length) throw new ConnectorError(tr('This Moloni user has no company.'))
   const wanted = ctx.creds.companyId ? list.find((c) => String(c.company_id) === String(ctx.creds.companyId)) : list[0]
-  if (!wanted) throw new ConnectorError(`Company ${ctx.creds.companyId} is not in this Moloni account. Available: ${list.map((c) => `${c.name} (${c.company_id})`).join(', ')}`)
+  if (!wanted) throw new ConnectorError(tr('Company {0} is not in this Moloni account. Available: {1}', ctx.creds.companyId, list.map((c) => `${c.name} (${c.company_id})`).join(', ')))
   return { id: wanted.company_id, name: wanted.name }
 }
 

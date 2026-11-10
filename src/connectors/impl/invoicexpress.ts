@@ -1,10 +1,11 @@
 import type { ExtDocument, ExtProduct } from '~/ingest/types'
 import { ConnectorError, request } from '../http'
 import { catalogDue, gross, num, since, type Connector, type Ctx } from '../types'
+import { tr } from '~/i18n'
 
 const base = (ctx: Ctx) => {
   const account = ctx.creds.account?.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\.app\.invoicexpress\.com.*$/, '')
-  if (!/^[a-z0-9-]+$/.test(account ?? '')) throw new ConnectorError('The account name is the first part of your InvoiceXpress address.')
+  if (!/^[a-z0-9-]+$/.test(account ?? '')) throw new ConnectorError(tr('The account name is the first part of your InvoiceXpress address.'))
   return `https://${account}.app.invoicexpress.com`
 }
 const get = <T>(ctx: Ctx, path: string, query: Record<string, any> = {}) => request<T>(`${base(ctx)}/${path}`, { query: { api_key: ctx.creds.apiKey, ...query } })

@@ -4,6 +4,8 @@ import { Mark } from '~/components/brand/logo'
 import type { IngestReport } from '~/ingest/types'
 import type { Policy, Snapshot } from '~/lib/types'
 import { cn } from '~/lib/utils'
+import { locale, tr } from '~/i18n'
+import { date, eur as money } from '~/lib/format'
 
 export interface Cargo {
   report: IngestReport
@@ -26,11 +28,10 @@ function Row({ label, value, sub, on }: { label: string; value: React.ReactNode;
   )
 }
 
-const n = (v: number) => <NumberFlow value={v} locales="pt-PT" />
-/** Onboarding speaks Portuguese whatever the app's number setting: 2 409 €, 10 out */
-const eur = (v: number) => `${Math.round(v).toLocaleString('pt-PT').replace(/\./g, '\u202f')} €`
-const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-const day = (d: string) => `${Number(d.slice(8, 10))} ${MONTHS[Number(d.slice(5, 7)) - 1]}`
+const n = (v: number) => <NumberFlow value={v} locales={locale()} />
+/** Whole euros and short dates, written the way the reader's language writes them: 2 409 € · 10 out, or €2,409 · 10 Oct */
+const eur = (v: number) => money(v, { decimals: 0 })
+const day = (d: string) => date(d, 'short')
 
 /**
  * The ship's manifest: what is coming aboard, filled in as the person answers.
@@ -41,34 +42,33 @@ export function Manifest({ name, nif, sector, locations, cargo, sample, policy, 
   const items = sample ? 54 : (cargo?.after.items.length ?? 0)
   const sales = sample ? 0 : (r?.documents.sales ?? 0) + (r?.documents.refunds ?? 0)
   return (
-    <aside aria-label="O que vai entrar no Nau" className={cn('rounded-[18px] bg-surface p-5 shadow-card', className)}>
+    <aside aria-label={tr('O que vai entrar no Nau')} className={cn('rounded-[18px] bg-surface p-5 shadow-card', className)}>
       <div className="flex items-center gap-3 pb-4">
         <span className="flex size-9 items-center justify-center rounded-[10px] bg-hover">
           <Mark size={17} className="text-ink" />
         </span>
         <div className="min-w-0">
-          <div className={cn('truncate text-[15px] font-medium tracking-[-0.01em]', name ? 'text-ink' : 'text-ink-4')}>{name || 'O teu negócio'}</div>
+          <div className={cn('truncate text-[15px] font-medium tracking-[-0.01em]', name ? 'text-ink' : 'text-ink-4')}>{name || tr('O teu negócio')}</div>
           <div className="truncate text-[12px] text-ink-3">
             {sector}
             {nif && (
               <>
-                {' '}
-                · NIF {nif} <CheckIcon size={10} weight="bold" className="inline text-ok" />
+                {tr('· NIF {0}', nif)} <CheckIcon size={10} weight="bold" className="inline text-ok" />
               </>
             )}
           </div>
         </div>
       </div>
       <dl>
-        <Row label="Artigos" on={items > 0} value={items ? n(items) : '—'} sub={sample ? 'dados de exemplo' : r && r.categories.created > 0 ? `${r.categories.created} categorias` : undefined} />
-        <Row label="Fornecedores" on={sample || (cargo?.after.suppliers.length ?? 0) > 0} value={sample ? n(7) : cargo?.after.suppliers.length ? n(cargo.after.suppliers.length) : '—'} />
-        <Row label="Histórico de vendas" on={sample || sales > 0} value={sample ? '90 dias' : sales ? n(sales) : '—'} sub={!sample && sales && cargo?.from && cargo.to ? `documentos · ${day(cargo.from)} a ${day(cargo.to)}` : undefined} />
-        <Row label="Stock" on={sample || (r?.stockSet ?? 0) > 0} value={sample ? 'incluído' : r?.stockSet ? eur(cargo!.stockValue) : '—'} sub={!sample && r?.stockSet ? `ao custo · ${r.stockSet} níveis` : !sample && items > 0 && step >= 1 ? 'por contar' : undefined} />
-        <Row label="Locais" on={locations.length > 0} value={locations.length ? n(locations.length) : '—'} sub={locations.slice(0, 3).join(' · ') || undefined} />
-        <Row label="O Operador faz sozinho" on={step >= 2} value={policy.reversible === 'ask' ? 'Nada' : policy.money === 'auto' ? `Até ${eur(policy.perActionLimit)}` : 'O reversível'} sub={step >= 2 ? (policy.reversible === 'ask' ? 'pergunta sempre' : policy.money === 'auto' ? 'por encomenda, com registo' : 'o dinheiro espera por ti') : undefined} />
+        <Row label={tr('Artigos')} on={items > 0} value={items ? n(items) : '—'} sub={sample ? tr('dados de exemplo') : r && r.categories.created > 0 ? tr('{0} categorias', r.categories.created) : undefined} />
+        <Row label={tr('Fornecedores')} on={sample || (cargo?.after.suppliers.length ?? 0) > 0} value={sample ? n(7) : cargo?.after.suppliers.length ? n(cargo.after.suppliers.length) : '—'} />
+        <Row label={tr('Histórico de vendas')} on={sample || sales > 0} value={sample ? tr('90 dias') : sales ? n(sales) : '—'} sub={!sample && sales && cargo?.from && cargo.to ? tr('documentos · {0} a {1}', day(cargo.from), day(cargo.to)) : undefined} />
+        <Row label={tr('Stock')} on={sample || (r?.stockSet ?? 0) > 0} value={sample ? 'incluído' : r?.stockSet ? eur(cargo!.stockValue) : '—'} sub={!sample && r?.stockSet ? tr('ao custo · {0} níveis', r.stockSet) : !sample && items > 0 && step >= 1 ? tr('por contar') : undefined} />
+        <Row label={tr('Locais')} on={locations.length > 0} value={locations.length ? n(locations.length) : '—'} sub={locations.slice(0, 3).join(' · ') || undefined} />
+        <Row label={tr('O Operador faz sozinho')} on={step >= 2} value={policy.reversible === 'ask' ? tr('Nada') : policy.money === 'auto' ? tr('Até {0}', eur(policy.perActionLimit)) : tr('O reversível')} sub={step >= 2 ? (policy.reversible === 'ask' ? tr('pergunta sempre') : policy.money === 'auto' ? tr('por encomenda, com registo') : tr('o dinheiro espera por ti')) : undefined} />
       </dl>
-      {!sample && r && r.negative > 0 && <p className="mt-3 rounded-[10px] bg-hover px-3 py-2 text-[12px] leading-relaxed text-ink-3">Há vendas sem stock por trás. Normal quando ainda não contaste: o Nau propõe a primeira contagem assim que entrares.</p>}
-      {!sample && r && r.lines.unmatched > 0 && <p className="mt-3 rounded-[10px] bg-hover px-3 py-2 text-[12px] leading-relaxed text-ink-3">{r.lines.unmatched} linhas não bateram com nenhum artigo e ficam de fora.</p>}
+      {!sample && r && r.negative > 0 && <p className="mt-3 rounded-[10px] bg-hover px-3 py-2 text-[12px] leading-relaxed text-ink-3">{tr('Há vendas sem stock por trás. Normal quando ainda não contaste: o Nau propõe a primeira contagem assim que entrares.')}</p>}
+      {!sample && r && r.lines.unmatched > 0 && <p className="mt-3 rounded-[10px] bg-hover px-3 py-2 text-[12px] leading-relaxed text-ink-3">{tr('{0} linhas não bateram com nenhum artigo e ficam de fora.', r.lines.unmatched)}</p>}
     </aside>
   )
 }

@@ -9,14 +9,15 @@ import { Button } from '~/components/ui/button'
 import { Field, Input } from '~/components/ui/form'
 import { primaryMode, useSession } from '~/data/store'
 import { isCloudConfigured } from '~/lib/env'
+import { msg, tr } from '~/i18n'
 
 export const Route = createFileRoute('/login')({
-  head: () => ({ meta: [{ title: 'Entrar — Nau' }] }),
+  head: () => ({ meta: [{ title: tr('Entrar — Nau') }] }),
   component: Login,
 })
 
-const schema = z.object({ email: z.email('Escreve um email válido'), password: z.string().min(1, 'Escreve a tua password') })
-const magicSchema = z.object({ email: z.email('Escreve um email válido'), password: z.string() })
+const schema = z.object({ email: z.email(msg('Escreve um email válido')), password: z.string().min(1, msg('Escreve a tua password')) })
+const magicSchema = z.object({ email: z.email(msg('Escreve um email válido')), password: z.string() })
 
 function Login() {
   useRedirectIfSignedIn()
@@ -33,7 +34,7 @@ function Login() {
       if (s.session?.mode === 'demo') await s.leaveDemo()
       const backend = useSession.getState().backend
       try {
-        if (!backend) throw new Error('Ainda a arrancar — tenta outra vez.')
+        if (!backend) throw new Error(tr('Ainda a arrancar — tenta outra vez.'))
         if (magic) {
           await backend.magicLink(value.email)
           setSent(value.email)
@@ -43,13 +44,13 @@ function Login() {
         const ws = await useSession.getState().refreshWorkspaces()
         void navigate({ to: ws.length ? '/app' : '/onboarding' })
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Não foi possível entrar')
+        setError(e instanceof Error ? e.message : tr('Não foi possível entrar'))
       }
     },
   })
   if (sent)
     return (
-      <AuthShell title="Vê o teu email" subtitle={`Enviámos um link de entrada para ${sent}. Só funciona uma vez e expira numa hora.`} footer={<button className="underline underline-offset-2 hover:text-ink" onClick={() => setSent(null)}>Usar outro email</button>}>
+      <AuthShell title={tr('Vê o teu email')} subtitle={tr('Enviámos um link de entrada para {0}. Só funciona uma vez e expira numa hora.', sent)} footer={<button className="underline underline-offset-2 hover:text-ink" onClick={() => setSent(null)}>{tr('Usar outro email')}</button>}>
         <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-ink">
           <EnvelopeSimpleIcon size={22} />
         </div>
@@ -57,17 +58,16 @@ function Login() {
     )
   return (
     <AuthShell
-      title="Bem-vindo de volta"
-      subtitle="Entra no teu espaço de trabalho."
+      title={tr('Bem-vindo de volta')}
+      subtitle={tr('Entra no teu espaço de trabalho.')}
       footer={
         <>
-          Novo no Nau?{' '}
+          {tr('Novo no Nau?')}
           <Link to="/signup" className="font-medium text-ink underline-offset-2 hover:underline">
-            Criar conta
-          </Link>{' '}
-          · ou{' '}
+            {tr('Criar conta')}
+          </Link> {tr('· ou')}
           <Link to="/demo" className="font-medium text-ink underline-offset-2 hover:underline">
-            abrir a demo
+            {tr('abrir a demo')}
           </Link>
         </>
       }
@@ -75,9 +75,9 @@ function Login() {
       {isCloudConfigured && (
         <>
           <Button size="lg" className="w-full" onClick={() => void useSession.getState().backend?.oauth('google').catch((e: Error) => setError(e.message))} icon={<GoogleIcon />}>
-            Continuar com Google
+            {tr('Continuar com Google')}
           </Button>
-          <Divider>ou com email</Divider>
+          <Divider>{tr('ou com email')}</Divider>
         </>
       )}
       <form
@@ -90,7 +90,7 @@ function Login() {
       >
         <form.Field name="email">
           {(f) => (
-            <Field label="Email" htmlFor="email" error={errorText(f.state.meta.errors)}>
+            <Field label={tr('Email')} htmlFor="email" error={errorText(f.state.meta.errors)}>
               <Input id="email" type="email" autoComplete="email" inputSize="lg" value={f.state.value} onBlur={f.handleBlur} onChange={(e) => f.handleChange(e.target.value)} aria-invalid={!!f.state.meta.errors.length} autoFocus />
             </Field>
           )}
@@ -101,9 +101,9 @@ function Login() {
               <Field
                 label={
                   <span className="flex w-full justify-between">
-                    Password
+                    {tr('Password')}
                     <Link to="/forgot-password" className="font-normal text-ink-3 hover:text-ink">
-                      Esqueceste-te?
+                      {tr('Esqueceste-te?')}
                     </Link>
                   </span>
                 }
@@ -123,16 +123,16 @@ function Login() {
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(submitting) => (
             <Button type="submit" variant="primary" size="lg" loading={submitting} className="mt-1 w-full">
-              {magic ? 'Enviar link por email' : 'Entrar'}
+              {magic ? tr('Enviar link por email') : tr('Entrar')}
             </Button>
           )}
         </form.Subscribe>
         {isCloudConfigured && (
           <button type="button" className="text-[13px] text-ink-3 hover:text-ink" onClick={() => setMagic((m) => !m)}>
-            {magic ? 'Usar password' : 'Prefiro receber um link por email'}
+            {magic ? tr('Usar password') : tr('Prefiro receber um link por email')}
           </button>
         )}
-        {primaryMode() === 'local' && <p className="text-[12px] text-ink-4">Modo local: as contas ficam neste browser até ligares uma base de dados.</p>}
+        {primaryMode() === 'local' && <p className="text-[12px] text-ink-4">{tr('Modo local: as contas ficam neste browser até ligares uma base de dados.')}</p>}
       </form>
     </AuthShell>
   )

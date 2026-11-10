@@ -3,6 +3,7 @@ import { safeEqual } from '~/server/crypto'
 import { serverConfigured } from '~/server/db'
 import { json } from '~/server/guard'
 import { tick } from '~/server/tick'
+import { tr } from '~/i18n'
 
 let running = false
 
@@ -12,16 +13,16 @@ let running = false
  */
 async function handle(request: Request) {
   const secret = process.env.CRON_SECRET
-  if (!secret) return json({ error: 'Set CRON_SECRET to enable the scheduler.' }, 503)
-  if (!safeEqual(request.headers.get('authorization')?.replace(/^Bearer\s+/i, ''), secret)) return json({ error: 'Unauthorized' }, 401)
-  if (!serverConfigured()) return json({ error: 'The server database is not configured.' }, 503)
+  if (!secret) return json({ error: tr('Set CRON_SECRET to enable the scheduler.') }, 503)
+  if (!safeEqual(request.headers.get('authorization')?.replace(/^Bearer\s+/i, ''), secret)) return json({ error: tr('Unauthorized') }, 401)
+  if (!serverConfigured()) return json({ error: tr('The server database is not configured.') }, 503)
   if (running) return json({ ok: true, skipped: 'a tick is still running' })
   running = true
   try {
     return json({ ok: true, ...(await tick()) })
   } catch (e) {
     console.error('[tick]', e)
-    return json({ error: 'Tick failed' }, 500)
+    return json({ error: tr('Tick failed') }, 500)
   } finally {
     running = false
   }

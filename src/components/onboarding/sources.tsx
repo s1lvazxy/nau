@@ -1,3 +1,4 @@
+import { num } from '~/lib/format'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CameraIcon, CaretDownIcon, CheckIcon, DatabaseIcon, NotePencilIcon, PlugsConnectedIcon, ReceiptIcon, SparkleIcon, SquareIcon, TableIcon, UploadSimpleIcon, WarningIcon, XIcon } from '@phosphor-icons/react'
 import { accessToken } from '~/agent/operator'
@@ -11,6 +12,7 @@ import { FIELD_LABEL, FIELDS, guessMapping, KIND_LABEL, mergeBatches, SHEET_KIND
 import type { IngestBatch } from '~/ingest/types'
 import type { Session } from '~/lib/types'
 import { cn, uid } from '~/lib/utils'
+import { tr } from '~/i18n'
 
 export type Origin = 'sheet' | 'invoicing' | 'system' | 'paper'
 export type Start = 'import' | 'sample' | 'empty'
@@ -33,17 +35,17 @@ export function sourcesToBatch(sources: Source[]): IngestBatch {
 }
 
 const ORIGINS: { value: Origin; title: string; body: string; icon: React.ReactNode }[] = [
-  { value: 'sheet', title: 'Excel ou folha de cálculo', body: 'Larga o ficheiro como está. O Nau percebe as colunas.', icon: <TableIcon size={20} /> },
-  { value: 'invoicing', title: 'Software de faturação', body: 'O SAF-T traz artigos, preços e todas as vendas. Ou liga a conta.', icon: <ReceiptIcon size={20} /> },
-  { value: 'system', title: 'Outro sistema de stock', body: 'Artigos, stock por local, lotes, fornecedores e histórico.', icon: <DatabaseIcon size={20} /> },
-  { value: 'paper', title: 'Papel, ou nada', body: 'Fotografa faturas e prateleiras, ou começa do zero.', icon: <NotePencilIcon size={20} /> },
+  { value: 'sheet', title: tr('Excel ou folha de cálculo'), body: tr('Larga o ficheiro como está. O Nau percebe as colunas.'), icon: <TableIcon size={20} /> },
+  { value: 'invoicing', title: tr('Software de faturação'), body: tr('O SAF-T traz artigos, preços e todas as vendas. Ou liga a conta.'), icon: <ReceiptIcon size={20} /> },
+  { value: 'system', title: tr('Outro sistema de stock'), body: tr('Artigos, stock por local, lotes, fornecedores e histórico.'), icon: <DatabaseIcon size={20} /> },
+  { value: 'paper', title: tr('Papel, ou nada'), body: tr('Fotografa faturas e prateleiras, ou começa do zero.'), icon: <NotePencilIcon size={20} /> },
 ]
 
 const ACCEPT: Record<Origin, string> = { sheet: '.xlsx,.csv,.txt,.tsv', invoicing: '.xml,.xlsx,.csv', system: '.xlsx,.csv,.txt,.tsv,.xml', paper: 'image/*,.pdf' }
 const DROP_HINT: Record<Origin, string> = {
-  sheet: 'Excel (.xlsx) ou CSV. Vários ficheiros de uma vez, se quiseres.',
-  invoicing: 'O SAF-T (PT) em .xml. Em quase todos os programas está em Exportar → SAF-T.',
-  system: 'Uma exportação por tabela: artigos, stock, fornecedores, vendas, compras. Excel, CSV ou SAF-T.',
+  sheet: tr('Excel (.xlsx) ou CSV. Vários ficheiros de uma vez, se quiseres.'),
+  invoicing: tr('O SAF-T (PT) em .xml. Em quase todos os programas está em Exportar → SAF-T.'),
+  system: tr('Uma exportação por tabela: artigos, stock, fornecedores, vendas, compras. Excel, CSV ou SAF-T.'),
   paper: '',
 }
 
@@ -94,7 +96,7 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
         const mediaType = file.type === 'application/pdf' ? 'application/pdf' : file.type === 'image/png' ? 'image/png' : file.type === 'image/webp' ? 'image/webp' : 'image/jpeg'
         const res = await fetch('/api/extract', { method: 'POST', headers: await modelHeaders(mode), body: JSON.stringify({ mode: as, data: await fileToBase64(file), mediaType, catalogue: [] }) })
         const j = await res.json()
-        if (!res.ok) throw new Error(j.error === 'Sign in to use Operator.' ? 'Entra na tua conta para ler fotografias.' : 'Não conseguimos ler esta fotografia. Tenta uma mais nítida, tirada de frente.')
+        if (!res.ok) throw new Error(res.status === 401 ? tr('Entra na tua conta para ler fotografias.') : tr('Não conseguimos ler esta fotografia. Tenta uma mais nítida, tirada de frente.'))
         if (as === 'shelf') {
           const products = (j.products as { name: string; category: string | null; barcode: string | null; count: number }[]).map((p, i) => ({ ref: `shelf:${id}:${i}`, name: p.name, category: p.category, barcode: p.barcode, stock: [{ qty: Math.max(0, Math.round(p.count)) }] }))
           patch(id, { status: 'done', batch: { products }, found: products.length })
@@ -104,7 +106,7 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
           patch(id, { status: 'done', found: lines.length, batch: { documents: lines.length ? [{ ref, kind: 'purchase', number: j.document_number ?? file.name, date: j.document_date ?? new Date().toISOString().slice(0, 10), party: j.supplier_name ? { name: j.supplier_name, nif: j.supplier_nif } : null, lines: lines.map((l) => ({ sku: l.code, name: l.description, qty: l.qty, unitCost: l.unit_cost, lot: l.lot, expiresOn: l.expires_on })) }] : [] } })
         }
       } catch (e) {
-        patch(id, { status: 'error', error: e instanceof Error ? e.message : 'Não conseguimos ler esta fotografia.' })
+        patch(id, { status: 'error', error: e instanceof Error ? e.message : tr('Não conseguimos ler esta fotografia.') })
       }
     },
     [mode, patch],
@@ -121,7 +123,7 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
         else if (r.kind === 'photo') {
           const id = uid()
           const pm = as ?? photoMode.current
-          setSources((l) => [...l, { id, kind: 'photo', name: r.name, mode: pm, status: model === false ? 'error' : 'reading', error: model === false ? 'Ler fotografias precisa do modelo de IA, que não está ligado nesta instalação.' : undefined }])
+          setSources((l) => [...l, { id, kind: 'photo', name: r.name, mode: pm, status: model === false ? 'error' : 'reading', error: model === false ? tr('Ler fotografias precisa do modelo de IA, que não está ligado nesta instalação.') : undefined }])
           if (model !== false) void readPhoto(id, r.file, pm)
         } else setSources((l) => [...l, { id: uid(), kind: 'error', name: r.name, error: r.error }])
       }
@@ -138,7 +140,7 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
 
   return (
     <div className="flex flex-col gap-5">
-      <div role="radiogroup" aria-label="De onde vêm os teus dados" className="grid gap-2 sm:grid-cols-2">
+      <div role="radiogroup" aria-label={tr('De onde vêm os teus dados')} className="grid gap-2 sm:grid-cols-2">
         {ORIGINS.map((o) => {
           const on = origin === o.value
           return (
@@ -163,13 +165,13 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
         >
           {!sources.length && <UploadSimpleIcon size={22} className={over ? 'text-accent' : 'text-ink-3'} />}
           <p className={cn('font-medium text-ink', sources.length ? 'text-[13px]' : 'text-[14px]')}>
-            {sources.length ? 'Larga mais ficheiros, ou' : 'Larga aqui os ficheiros, ou'}{' '}
+            {sources.length ? tr('Larga mais ficheiros, ou') : tr('Larga aqui os ficheiros, ou')}{' '}
             <button type="button" onClick={() => fileRef.current?.click()} className="text-accent-ink underline decoration-[var(--accent-a7)] underline-offset-[3px] hover:decoration-current">
-              escolhe do computador
+              {tr('escolhe do computador')}
             </button>
           </p>
           {!sources.length && <p className="max-w-[46ch] text-[12.5px] leading-relaxed text-ink-3">{DROP_HINT[origin]}</p>}
-          <p className="text-[11.5px] text-ink-4">Os ficheiros são lidos no teu browser. Nada é enviado até criares o espaço.</p>
+          <p className="text-[11.5px] text-ink-4">{tr('Os ficheiros são lidos no teu browser. Nada é enviado até criares o espaço.')}</p>
           <input ref={fileRef} type="file" multiple accept={ACCEPT[origin]} className="hidden" onChange={(e) => (e.target.files && void add(e.target.files), (e.target.value = ''))} />
         </div>
       )}
@@ -178,8 +180,8 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
         <div className="grid gap-2 sm:grid-cols-2">
           {(
             [
-              { key: 'invoice', title: 'Fotografar faturas e guias', body: 'Cada linha vira um artigo, com custo, fornecedor e a quantidade que entrou.', icon: <ReceiptIcon size={18} /> },
-              { key: 'shelf', title: 'Fotografar prateleiras', body: 'O Nau lê os rótulos e conta o que está à vista. Tu confirmas depois.', icon: <CameraIcon size={18} /> },
+              { key: 'invoice', title: tr('Fotografar faturas e guias'), body: tr('Cada linha vira um artigo, com custo, fornecedor e a quantidade que entrou.'), icon: <ReceiptIcon size={18} /> },
+              { key: 'shelf', title: tr('Fotografar prateleiras'), body: tr('O Nau lê os rótulos e conta o que está à vista. Tu confirmas depois.'), icon: <CameraIcon size={18} /> },
             ] as const
           ).map((p) => (
             <button key={p.key} type="button" disabled={model === false} onClick={() => ((photoMode.current = p.key), photoRef.current?.click())} className="press flex items-start gap-3 rounded-[14px] bg-surface p-4 text-left shadow-card transition-shadow hover:shadow-[0_0_0_1px_var(--gray-a7)] disabled:pointer-events-none disabled:opacity-50">
@@ -191,11 +193,11 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
             </button>
           ))}
           <input ref={photoRef} type="file" multiple accept="image/*,.pdf" capture="environment" className="hidden" onChange={(e) => (e.target.files && void add(e.target.files, photoMode.current), (e.target.value = ''))} />
-          {model === false && <p className="text-[12.5px] text-ink-3 sm:col-span-2">Ler fotografias precisa do modelo de IA, que não está ligado nesta instalação. Podes começar vazio e dar entrada das faturas à mão.</p>}
+          {model === false && <p className="text-[12.5px] text-ink-3 sm:col-span-2">{tr('Ler fotografias precisa do modelo de IA, que não está ligado nesta instalação. Podes começar vazio e dar entrada das faturas à mão.')}</p>}
           {(
             [
-              { v: 'sample', title: 'Ver primeiro com dados de exemplo', body: 'Uma mercearia com 54 artigos e 90 dias de vendas. Apagas quando quiseres.', icon: <SparkleIcon size={18} /> },
-              { v: 'empty', title: 'Começar vazio', body: 'Crias os artigos à medida que as entregas chegam.', icon: <SquareIcon size={18} /> },
+              { v: 'sample', title: tr('Ver primeiro com dados de exemplo'), body: tr('Uma mercearia com 54 artigos e 90 dias de vendas. Apagas quando quiseres.'), icon: <SparkleIcon size={18} /> },
+              { v: 'empty', title: tr('Começar vazio'), body: tr('Crias os artigos à medida que as entregas chegam.'), icon: <SquareIcon size={18} /> },
             ] as const
           ).map((o) => (
             <button key={o.v} type="button" aria-pressed={start === o.v} onClick={() => setStart(start === o.v ? 'import' : o.v)} className={cn('press flex items-start gap-3 rounded-[14px] bg-surface p-4 text-left transition-shadow', start === o.v ? 'shadow-[0_0_0_2px_var(--accent-9)]' : 'shadow-card hover:shadow-[0_0_0_1px_var(--gray-a7)]')}>
@@ -222,7 +224,7 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
       {origin === 'invoicing' && (
         <div className="rounded-[14px] bg-surface p-4 shadow-card">
           <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
-            <PlugsConnectedIcon size={16} className="text-ink-3" /> Ou liga a conta, e as vendas passam a entrar sozinhas
+            <PlugsConnectedIcon size={16} className="text-ink-3" /> {tr('Ou liga a conta, e as vendas passam a entrar sozinhas')}
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {accounts.map((c) => (
@@ -234,10 +236,10 @@ export function SourcesStep({ origin, setOrigin, sources, setSources, start, set
           </div>
           <p className="mt-3 text-[12.5px] leading-relaxed text-ink-3">
             {mode !== 'cloud'
-              ? 'As ligações precisam da base de dados da instalação (Supabase). Neste modo local, usa o SAF-T.'
+              ? tr('As ligações precisam da base de dados da instalação (Supabase). Neste modo local, usa o SAF-T.')
               : connectAfter
-                ? `Pedimos as credenciais do ${accounts.find((c) => c.id === connectAfter)?.name} logo a seguir a criares o espaço. A primeira sincronização traz os artigos e 90 dias de vendas.`
-                : 'TOConline, Zone Soft, WinRest e os restantes programas certificados entram pelo SAF-T.'}
+                ? tr('Pedimos as credenciais do {0} logo a seguir a criares o espaço. A primeira sincronização traz os artigos e 90 dias de vendas.', accounts.find((c) => c.id === connectAfter)?.name)
+                : tr('TOConline, Zone Soft, WinRest e os restantes programas certificados entram pelo SAF-T.')}
           </p>
         </div>
       )}
@@ -256,21 +258,20 @@ function FileRow({ s, onRemove }: { s: Exclude<Source, { kind: 'table' }>; onRem
           {s.kind === 'error' && s.error}
           {s.kind === 'saft' && (
             <>
-              SAF-T de {s.summary.company || 'empresa sem nome'}
-              {s.summary.period && ` · ${s.summary.period}`} · <span className="tabular text-ink-2">{s.summary.products}</span> artigos · <span className="tabular text-ink-2">{s.summary.batch.documents?.length ?? 0}</span> documentos de venda
+              {tr('SAF-T de {0}{1} ·', s.summary.company || tr('empresa sem nome'), s.summary.period && ` · ${s.summary.period}`)} <span className="tabular text-ink-2">{s.summary.products}</span> {tr('artigos ·')} <span className="tabular text-ink-2">{s.summary.batch.documents?.length ?? 0}</span> {tr('documentos de venda')}
             </>
           )}
-          {s.kind === 'photo' && (s.status === 'reading' ? (s.mode === 'shelf' ? 'A ler os rótulos e a contar…' : 'A ler as linhas da fatura…') : s.status === 'error' ? s.error : s.mode === 'shelf' ? `${s.found} produtos contados à vista. Confirma as quantidades depois, numa contagem.` : s.found ? `${s.found} linhas lidas. Entram como entrega, com os custos da fatura.` : 'Não encontrámos linhas de artigos nesta página.')}
+          {s.kind === 'photo' && (s.status === 'reading' ? (s.mode === 'shelf' ? tr('A ler os rótulos e a contar…') : tr('A ler as linhas da fatura…')) : s.status === 'error' ? s.error : s.mode === 'shelf' ? tr('{0} produtos contados à vista. Confirma as quantidades depois, numa contagem.', s.found) : s.found ? tr('{0} linhas lidas. Entram como entrega, com os custos da fatura.', s.found) : tr('Não encontrámos linhas de artigos nesta página.'))}
         </div>
       </div>
-      <button type="button" aria-label={`Retirar ${s.name}`} onClick={onRemove} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-hover hover:text-ink">
+      <button type="button" aria-label={tr('Retirar {0}', s.name)} onClick={onRemove} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-hover hover:text-ink">
         <XIcon size={14} />
       </button>
     </div>
   )
 }
 
-const FIELD_OPTIONS = [{ value: '', label: 'Ignorar' }, ...FIELDS.map((f) => ({ value: f as string, label: FIELD_LABEL[f] }))]
+const FIELD_OPTIONS = [{ value: '', label: tr('Ignorar') }, ...FIELDS.map((f) => ({ value: f as string, label: FIELD_LABEL[f] }))]
 /** Fields that only make sense for one kind of sheet are left out of the other's list. */
 const HIDDEN: Record<SheetKind, Field[]> = { items: ['qty', 'date', 'doc', 'nif', 'email', 'phone'], suppliers: ['sku', 'barcode', 'category', 'unit', 'cost', 'price', 'vat', 'stock', 'location', 'lot', 'expiry', 'qty', 'date', 'doc'], sales: ['stock', 'category', 'unit', 'nif', 'email', 'phone', 'supplier'], purchases: ['stock', 'category', 'unit', 'email', 'phone'] }
 
@@ -295,25 +296,25 @@ function TableCard({ s, onChange, onRemove }: { s: Extract<Source, { kind: 'tabl
           <div className="truncate text-[13.5px] font-medium text-ink">{s.name}</div>
           <div className="mt-0.5 text-[12.5px] leading-snug text-ink-3">
             {s.reading ? (
-              'O Operador está a ler as colunas…'
+              tr('O Operador está a ler as colunas…')
             ) : missing.length ? (
-              <span className="text-bad-ink">Falta indicar a coluna de {missing.map((f) => FIELD_LABEL[f].toLowerCase()).join(' e de ')}.</span>
+              <span className="text-bad-ink">{tr('Falta indicar a coluna de {0}.', missing.map((f) => FIELD_LABEL[f].toLowerCase()).join(' e de '))}</span>
             ) : (
               <>
-                <span className="tabular text-ink-2">{used.toLocaleString('pt-PT')}</span> de {s.table.rows.length.toLocaleString('pt-PT')} linhas · {mapped} de {s.table.headers.length} colunas reconhecidas{s.byModel ? ' pelo Operador' : ''}
-                {issues.length > 0 && <span className="text-warn-ink"> · {issues.length} por rever</span>}
+                <span className="tabular text-ink-2">{num(used)}</span> {(s.byModel ? tr('de {0} linhas · {1} de {2} colunas reconhecidas pelo Operador', s.table.rows.length.toLocaleString('pt-PT'), mapped, s.table.headers.length) : tr('de {0} linhas · {1} de {2} colunas reconhecidas', s.table.rows.length.toLocaleString('pt-PT'), mapped, s.table.headers.length))}
+                {issues.length > 0 && <span className="text-warn-ink"> {tr('· {0} por rever', issues.length)}</span>}
               </>
             )}
           </div>
         </div>
-        <Select size="sm" aria-label="O que este ficheiro contém" className="w-[168px] shrink-0 max-sm:hidden" value={s.mapping.kind} onChange={(kind: SheetKind) => onChange({ mapping: { ...guessMapping(s.table), kind } })} options={SHEET_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
-        <button type="button" aria-label={`Retirar ${s.name}`} onClick={onRemove} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-hover hover:text-ink">
+        <Select size="sm" aria-label={tr('O que este ficheiro contém')} className="w-[168px] shrink-0 max-sm:hidden" value={s.mapping.kind} onChange={(kind: SheetKind) => onChange({ mapping: { ...guessMapping(s.table), kind } })} options={SHEET_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
+        <button type="button" aria-label={tr('Retirar {0}', s.name)} onClick={onRemove} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-hover hover:text-ink">
           <XIcon size={14} />
         </button>
       </div>
       <button type="button" aria-expanded={open || missing.length > 0} onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-1.5 border-t border-line px-3.5 py-2 text-left text-[12.5px] text-ink-3 hover:text-ink">
         <CaretDownIcon size={11} className={cn('transition-transform duration-200', (open || missing.length > 0) && 'rotate-180')} />
-        {open || missing.length > 0 ? 'Colunas' : 'Ver e corrigir as colunas'}
+        {open || missing.length > 0 ? tr('Colunas') : tr('Ver e corrigir as colunas')}
         <span className="ml-auto sm:hidden">{KIND_LABEL[s.mapping.kind]}</span>
       </button>
       {(open || missing.length > 0) && (
@@ -322,9 +323,9 @@ function TableCard({ s, onChange, onRemove }: { s: Extract<Source, { kind: 'tabl
             <table className="w-full text-[12.5px]">
               <thead className="sticky top-0 bg-surface text-ink-3">
                 <tr>
-                  <th className="px-3.5 py-2 text-left font-normal">Coluna no ficheiro</th>
-                  <th className="px-2 py-2 text-left font-normal max-sm:hidden">Exemplo</th>
-                  <th className="w-[190px] px-3.5 py-2 text-left font-normal">No Nau</th>
+                  <th className="px-3.5 py-2 text-left font-normal">{tr('Coluna no ficheiro')}</th>
+                  <th className="px-2 py-2 text-left font-normal max-sm:hidden">{tr('Exemplo')}</th>
+                  <th className="w-[190px] px-3.5 py-2 text-left font-normal">{tr('No Nau')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,7 +334,7 @@ function TableCard({ s, onChange, onRemove }: { s: Extract<Source, { kind: 'tabl
                     <td className="max-w-[180px] truncate px-3.5 py-1.5 text-ink">{h}</td>
                     <td className="max-w-[160px] truncate px-2 py-1.5 text-ink-3 max-sm:hidden">{s.table.rows.find((r) => r[h])?.[h] ?? '—'}</td>
                     <td className="px-3.5 py-1.5">
-                      <Select size="sm" aria-label={`Campo para a coluna ${h}`} value={s.mapping.columns[h] ?? ''} onChange={(v: string) => setField(h, (v || null) as Field | null)} options={FIELD_OPTIONS.filter((o) => !HIDDEN[s.mapping.kind].includes(o.value as Field))} />
+                      <Select size="sm" aria-label={tr('Campo para a coluna {0}', h)} value={s.mapping.columns[h] ?? ''} onChange={(v: string) => setField(h, (v || null) as Field | null)} options={FIELD_OPTIONS.filter((o) => !HIDDEN[s.mapping.kind].includes(o.value as Field))} />
                     </td>
                   </tr>
                 ))}
@@ -343,17 +344,17 @@ function TableCard({ s, onChange, onRemove }: { s: Extract<Source, { kind: 'tabl
           {s.mapping.kind !== 'suppliers' && Object.values(s.mapping.columns).includes('price') && (
             <label className="flex items-center gap-2 border-t border-line px-3.5 py-2.5 text-[12.5px] text-ink-2">
               <input type="checkbox" className="accent-[var(--accent-9)]" checked={s.mapping.priceIncludesVat} onChange={(e) => onChange({ mapping: { ...s.mapping, priceIncludesVat: e.target.checked } })} />
-              Os preços de venda já incluem IVA
+              {tr('Os preços de venda já incluem IVA')}
             </label>
           )}
           {issues.length > 0 && (
             <ul className="border-t border-line px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-3">
               {issues.slice(0, 4).map((i) => (
                 <li key={`${i.row}${i.message}`}>
-                  Linha {i.row}: {i.message}
+                  {tr('Linha {0}: {1}', i.row, i.message)}
                 </li>
               ))}
-              {issues.length > 4 && <li>e mais {issues.length - 4}. Estas linhas ficam de fora.</li>}
+              {issues.length > 4 && <li>{tr('e mais {0}. Estas linhas ficam de fora.', issues.length - 4)}</li>}
             </ul>
           )}
         </div>

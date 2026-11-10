@@ -16,6 +16,7 @@ import { useUI, resolvedDark } from '~/stores/ui'
 import { setNumberLocale } from '~/lib/format'
 import { cn } from '~/lib/utils'
 import type { Snapshot } from '~/lib/types'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/app')({
   ssr: false,
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/app')({
   component: AppLayout,
 })
 
-function Loading({ label = 'Loading your workspace…' }: { label?: string }) {
+function Loading({ label = tr('Loading your workspace…') }: { label?: string }) {
   return (
     <div className="flex h-dvh flex-col items-center justify-center gap-4">
       <Mark size={28} working className="text-ink" />
@@ -80,14 +81,14 @@ function AppLayout() {
     return (
       <div className="flex h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
         <Mark size={28} className="text-bad" />
-        <p className="text-[15px] font-medium">We couldn’t open this workspace</p>
+        <p className="text-[15px] font-medium">{tr('We couldn’t open this workspace')}</p>
         <p className="max-w-sm text-[13px] text-ink-3">{(q.error as Error).message}</p>
         <button className="mt-2 text-[13px] text-ink underline underline-offset-2" onClick={() => void q.refetch()}>
-          Try again
+          {tr('Try again')}
         </button>
       </div>
     )
-  if (!q.data) return <Loading label={status === 'signedIn' ? 'Loading your workspace…' : 'Signing you in…'} />
+  if (!q.data) return <Loading label={status === 'signedIn' ? tr('Loading your workspace…') : tr('Signing you in…')} />
   return (
     <SnapshotContext.Provider value={q.data}>
       <Shell snapshot={q.data} />
@@ -110,12 +111,12 @@ function Shell({ snapshot }: { snapshot: Snapshot }) {
       commit: async (cs, opts) => {
         if (!canWrite) {
           const { toast } = await import('sonner')
-          toast.error('View-only access', { description: 'Ask an admin to give you edit rights.' })
+          toast.error(tr('View-only access'), { description: tr('Ask an admin to give you edit rights.') })
           return
         }
         await commitRaw(cs, opts)
       },
-      actor: { kind: 'user', name: session?.user.name ?? 'You' },
+      actor: { kind: 'user', name: session?.user.name ?? tr('You') },
       navigate: (to: string) => void navigate({ to }),
       canWrite,
       demo: session?.mode === 'demo',
@@ -170,13 +171,13 @@ function ShellInner({ collapsed, mobileNav, setMobileNav }: { collapsed: boolean
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <div className="flex h-12 shrink-0 items-center gap-2 bg-panel px-3 md:hidden">
-          <button type="button" aria-label="Open menu" onClick={() => setMobileNav(true)} className="flex size-9 items-center justify-center rounded-lg text-ink">
+          <button type="button" aria-label={tr('Open menu')} onClick={() => setMobileNav(true)} className="flex size-9 items-center justify-center rounded-lg text-ink">
             <ListIcon size={18} />
           </button>
           <Mark size={18} className="text-ink" />
           <div className="ml-auto">
             <button type="button" onClick={() => useOperator.getState().toggle()} className="flex h-8 items-center gap-1.5 rounded-full bg-surface px-3 text-[12.5px] font-medium text-ink shadow-card">
-              <Mark size={13} className="text-accent" /> Operator
+              <Mark size={13} className="text-accent" /> {tr('Operator')}
             </button>
           </div>
         </div>
@@ -192,12 +193,12 @@ function ShellInner({ collapsed, mobileNav, setMobileNav }: { collapsed: boolean
         <SidebarContent onNavigate={() => setMobileNav(false)} />
       </Sheet>
       {/* Mobile tab bar */}
-      <nav className="glass fixed inset-x-3 bottom-3 z-30 flex h-14 items-center justify-around rounded-[18px] bg-raised/85 shadow-pop backdrop-blur-xl md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label="Quick">
+      <nav className="glass fixed inset-x-3 bottom-3 z-30 flex h-14 items-center justify-around rounded-[18px] bg-raised/85 shadow-pop backdrop-blur-xl md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label={tr('Quick')}>
         {[
-          { to: '/app', icon: <HouseIcon size={20} />, label: 'Home', exact: true },
-          { to: '/app/items', icon: <PackageIcon size={20} />, label: 'Items' },
-          { to: '/app/scan', icon: <BarcodeIcon size={20} />, label: 'Scan' },
-          { to: '/app/approvals', icon: <ListChecksIcon size={20} />, label: 'Approvals' },
+          { to: '/app', icon: <HouseIcon size={20} />, label: tr('Home'), exact: true },
+          { to: '/app/items', icon: <PackageIcon size={20} />, label: tr('Items') },
+          { to: '/app/scan', icon: <BarcodeIcon size={20} />, label: tr('Scan') },
+          { to: '/app/approvals', icon: <ListChecksIcon size={20} />, label: tr('Approvals') },
         ].map((t) => {
           const active = t.exact ? path === t.to : path.startsWith(t.to)
           return (

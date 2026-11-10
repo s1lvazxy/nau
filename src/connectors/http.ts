@@ -1,5 +1,6 @@
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
+import { tr } from '~/i18n'
 
 export class ConnectorError extends Error {
   constructor(
@@ -23,15 +24,15 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
   try {
     url = new URL(raw)
   } catch {
-    throw new ConnectorError('That address is not a valid URL.')
+    throw new ConnectorError(tr('That address is not a valid URL.'))
   }
   if (process.env.NAU_ALLOW_PRIVATE_HOSTS === '1') return url
-  if (url.protocol !== 'https:') throw new ConnectorError('The address must start with https://')
+  if (url.protocol !== 'https:') throw new ConnectorError(tr('The address must start with https://'))
   const host = url.hostname.replace(/^\[|\]$/g, '')
-  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) throw new ConnectorError('That address points inside the server’s network.')
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) throw new ConnectorError(tr('That address points inside the server’s network.'))
   const ips = isIP(host) ? [host] : (await lookup(host, { all: true }).catch(() => [])).map((a) => a.address)
-  if (!ips.length) throw new ConnectorError(`Could not find ${host}.`)
-  if (ips.some(isPrivate)) throw new ConnectorError('That address points inside the server’s network.')
+  if (!ips.length) throw new ConnectorError(tr('Could not find {0}.', host))
+  if (ips.some(isPrivate)) throw new ConnectorError(tr('That address points inside the server’s network.'))
   return url
 }
 
@@ -78,7 +79,7 @@ export async function request<T = any>(url: string, o: RequestOptions = {}): Pro
         await sleep(600)
         continue
       }
-      throw new ConnectorError(`${u.host} did not answer (${e instanceof Error ? e.message : 'network error'}).`)
+      throw new ConnectorError(tr('{0} did not answer ({1}).', u.host, e instanceof Error ? e.message : tr('network error')))
     }
     if (o.raw) return res as T
     if ((res.status === 429 || res.status >= 500) && attempt === 0) {
@@ -95,7 +96,7 @@ export async function request<T = any>(url: string, o: RequestOptions = {}): Pro
     if (!res.ok) {
       const d = data as Record<string, any> | null
       const said = (d && (d.error_description || d.message || d.error?.message || d.errors?.[0]?.message || d.errors?.[0]?.detail || d.errors?.[0]?.error || (typeof d.error === 'string' ? d.error : ''))) || (typeof data === 'string' ? data.slice(0, 160) : '')
-      throw new ConnectorError(res.status === 401 || res.status === 403 ? `${u.host} refused the credentials${said ? ` (${said})` : ''}.` : `${u.host} answered ${res.status}${said ? `: ${said}` : ''}.`, res.status)
+      throw new ConnectorError(res.status === 401 || res.status === 403 ? tr('{0} refused the credentials{1}.', u.host, said ? ` (${said})` : '') : tr('{0} answered {1}{2}.', u.host, res.status, said ? `: ${said}` : ''), res.status)
     }
     return data as T
   }

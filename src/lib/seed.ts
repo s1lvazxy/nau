@@ -23,6 +23,7 @@ import { addDays, isoDay } from './format'
 import { makeNIF } from './pt'
 import { rng, round, slugify, uid } from './utils'
 import { generateProposals } from './analytics'
+import { tr } from '~/i18n'
 
 export const DEFAULT_SETTINGS: Workspace['settings'] = {
   autonomy: { reorder: 'draft', transfer: 'suggest', adjustment: 'suggest', markdown: 'suggest', autoLimit: 250 },
@@ -34,13 +35,13 @@ export const DEFAULT_SETTINGS: Workspace['settings'] = {
 }
 
 export const DEFAULT_PLAYBOOKS: Omit<Playbook, 'id'>[] = [
-  { key: 'reorder', name: 'Reorder autopilot', description: 'Watches every item against demand and lead time, and drafts purchase orders grouped by supplier.', cadence: 'hourly', enabled: true },
-  { key: 'rebalance', name: 'Rebalance locations', description: 'Moves stock between your stores before one runs dry while another sits on extra.', cadence: 'daily', enabled: true },
-  { key: 'expiry', name: 'Expiry radar', description: 'Flags lots that won’t sell before their date and proposes a markdown in time to matter.', cadence: 'daily', enabled: true },
-  { key: 'deadstock', name: 'Dead stock release', description: 'Finds money tied up in items that stopped selling and suggests how to free it.', cadence: 'weekly', enabled: true },
-  { key: 'cyclecount', name: 'Cycle counts', description: 'Schedules small, rotating counts of your most valuable items so numbers stay true.', cadence: 'weekly', enabled: true },
-  { key: 'pricewatch', name: 'Supplier price watch', description: 'Notices when a delivery costs more than the last one and shows the price that keeps your margin.', cadence: 'daily', enabled: true },
-  { key: 'brief', name: 'Morning brief', description: 'A short summary of what changed overnight and what needs you today.', cadence: 'daily', enabled: true },
+  { key: 'reorder', name: tr('Reorder autopilot'), description: tr('Watches every item against demand and lead time, and drafts purchase orders grouped by supplier.'), cadence: 'hourly', enabled: true },
+  { key: 'rebalance', name: tr('Rebalance locations'), description: tr('Moves stock between your stores before one runs dry while another sits on extra.'), cadence: 'daily', enabled: true },
+  { key: 'expiry', name: tr('Expiry radar'), description: tr('Flags lots that won’t sell before their date and proposes a markdown in time to matter.'), cadence: 'daily', enabled: true },
+  { key: 'deadstock', name: tr('Dead stock release'), description: tr('Finds money tied up in items that stopped selling and suggests how to free it.'), cadence: 'weekly', enabled: true },
+  { key: 'cyclecount', name: tr('Cycle counts'), description: tr('Schedules small, rotating counts of your most valuable items so numbers stay true.'), cadence: 'weekly', enabled: true },
+  { key: 'pricewatch', name: tr('Supplier price watch'), description: tr('Notices when a delivery costs more than the last one and shows the price that keeps your margin.'), cadence: 'daily', enabled: true },
+  { key: 'brief', name: tr('Morning brief'), description: tr('A short summary of what changed overnight and what needs you today.'), cadence: 'daily', enabled: true },
 ]
 
 let wid = 0
@@ -55,7 +56,7 @@ const w = (type: Widget['type'], x: number, y: number, ww: number, h: number, co
 export function defaultDashboards(): Omit<Dashboard, 'id'>[] {
   return [
     {
-      name: 'Overview',
+      name: tr('Overview'),
       position: 0,
       widgets: [
         w('brief', 0, 0, 5, 5),
@@ -75,7 +76,7 @@ export function defaultDashboards(): Omit<Dashboard, 'id'>[] {
       ],
     },
     {
-      name: 'Floor',
+      name: tr('Floor'),
       position: 1,
       widgets: [
         w('quickActions', 0, 0, 4, 4),
@@ -106,15 +107,15 @@ interface Spec {
 }
 
 const CATS: { key: string; name: string; hue: number }[] = [
-  { key: 'pantry', name: 'Tinned fish & pantry', hue: 28 },
-  { key: 'oil', name: 'Olive oil & vinegar', hue: 78 },
-  { key: 'wine', name: 'Wine', hue: 345 },
-  { key: 'port', name: 'Port & spirits', hue: 15 },
-  { key: 'coffee', name: 'Coffee & tea', hue: 24 },
-  { key: 'cheese', name: 'Cheese & charcuterie', hue: 44 },
-  { key: 'bakery', name: 'Bakery', hue: 36 },
-  { key: 'drinks', name: 'Soft drinks & water', hue: 198 },
-  { key: 'sweets', name: 'Sweets & honey', hue: 318 },
+  { key: 'pantry', name: tr('Tinned fish & pantry'), hue: 28 },
+  { key: 'oil', name: tr('Olive oil & vinegar'), hue: 78 },
+  { key: 'wine', name: tr('Wine'), hue: 345 },
+  { key: 'port', name: tr('Port & spirits'), hue: 15 },
+  { key: 'coffee', name: tr('Coffee & tea'), hue: 24 },
+  { key: 'cheese', name: tr('Cheese & charcuterie'), hue: 44 },
+  { key: 'bakery', name: tr('Bakery'), hue: 36 },
+  { key: 'drinks', name: tr('Soft drinks & water'), hue: 198 },
+  { key: 'sweets', name: tr('Sweets & honey'), hue: 318 },
 ]
 
 const SUPS: { key: string; name: string; lead: number; min: number; terms: string; contact: string; every: number }[] = [
@@ -123,7 +124,7 @@ const SUPS: { key: string; name: string; lead: number; min: number; terms: strin
   { key: 'quinta', name: 'Quinta das Pedras', lead: 7, min: 500, terms: '60 days', contact: 'Rui Almeida', every: 14 },
   { key: 'torr', name: 'Torrefação Lusa', lead: 2, min: 120, terms: '15 days', contact: 'Marta Pires', every: 7 },
   { key: 'serra', name: 'Queijaria da Serra', lead: 4, min: 200, terms: '30 days', contact: 'João Nunes', every: 7 },
-  { key: 'estrela', name: 'Padaria Estrela', lead: 1, min: 40, terms: 'On delivery', contact: 'Sofia Reis', every: 1 },
+  { key: 'estrela', name: 'Padaria Estrela', lead: 1, min: 40, terms: tr('On delivery'), contact: 'Sofia Reis', every: 1 },
   { key: 'norte', name: 'Bebidas do Norte', lead: 3, min: 150, terms: '30 days', contact: 'Carlos Matos', every: 7 },
 ]
 
@@ -252,7 +253,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
     { id: uid(), name: 'Ana Ribeiro', email: 'contabilidade@ribeiro-cc.pt', role: 'viewer', status: 'invited', hue: 270 },
   ]
   const locations: Location[] = [
-    { id: uid(), name: 'Marvila warehouse', code: 'ARM', kind: 'warehouse', address: 'Rua do Açúcar 74, Lisboa', isDefault: true },
+    { id: uid(), name: tr('Marvila warehouse'), code: 'ARM', kind: 'warehouse', address: 'Rua do Açúcar 74, Lisboa', isDefault: true },
     { id: uid(), name: 'Príncipe Real', code: 'PRL', kind: 'store', address: 'Rua da Escola Politécnica 61, Lisboa' },
     { id: uid(), name: 'Bonfim', code: 'BNF', kind: 'store', address: 'Rua do Heroísmo 212, Porto' },
   ]
@@ -268,7 +269,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
     contact: s.contact,
     leadTimeDays: s.lead,
     minOrderValue: s.min,
-    paymentTerms: s.terms,
+    paymentTerms: tr('{0} days', parseInt(s.terms, 10)),
     notes: null,
     orderDays: s.every === 1 ? [1, 2, 3, 4, 5, 6] : [2],
   }))
@@ -279,7 +280,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
     return {
       workspace,
       members: members.slice(0, 1),
-      locations: [{ ...WH, name: 'Main store', code: 'MAIN', kind: 'store', address: null }],
+      locations: [{ ...WH, name: tr('Main store'), code: 'MAIN', kind: 'store', address: null }],
       categories: categories.slice(0, 0),
       suppliers: [],
       items: [],
@@ -327,7 +328,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
   const movements: Movement[] = []
   const receipts: Receipt[] = []
   const orders: PurchaseOrder[] = []
-  const actorSys = { kind: 'system' as const, name: 'POS sync' }
+  const actorSys = { kind: 'system' as const, name: tr('POS sync') }
   const team = [
     { kind: 'user' as const, name: 'Tiago Costa' },
     { kind: 'user' as const, name: 'Rita Sousa' },
@@ -456,7 +457,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
           const left = get(it.id, loc.id)
           if (left > 0 && r() < 0.5) {
             set(it.id, loc.id, 0)
-            movements.push({ id: uid(), itemId: it.id, locationId: loc.id, type: 'waste', qty: -left, unitCost: it.cost, actor: team[2], createdAt: ts(d, 20, 10), note: 'End-of-day leftovers' })
+            movements.push({ id: uid(), itemId: it.id, locationId: loc.id, type: 'waste', qty: -left, unitCost: it.cost, actor: team[2], createdAt: ts(d, 20, 10), note: tr('End-of-day leftovers') })
           }
         }
       }
@@ -469,7 +470,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
       const loc = r() < 0.5 ? LX : PO
       if (get(it.id, loc.id) + delta >= 0) {
         set(it.id, loc.id, get(it.id, loc.id) + delta)
-        movements.push({ id: uid(), itemId: it.id, locationId: loc.id, type: 'adjustment', qty: delta, unitCost: it.cost, actor: team[1], createdAt: ts(d, 18, 5), note: r() < 0.5 ? 'Damaged on shelf' : 'Count correction' })
+        movements.push({ id: uid(), itemId: it.id, locationId: loc.id, type: 'adjustment', qty: delta, unitCost: it.cost, actor: team[1], createdAt: ts(d, 18, 5), note: r() < 0.5 ? tr('Damaged on shelf') : tr('Count correction') })
       }
     }
   }
@@ -537,7 +538,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
     createdBy: by,
     createdAt: addDays(now, -createdAgo).toISOString(),
     sentAt: status === 'draft' ? null : addDays(now, -createdAgo).toISOString(),
-    note: by === 'agent' ? 'Drafted by Operator from the reorder autopilot.' : null,
+    note: by === 'agent' ? tr('Drafted by Operator from the reorder autopilot.') : null,
   })
   orders.push(
     mk('torr', [['Café em grão 1kg', 12], ['Café moído lote casa', 48], ['Chá dos Açores', 12]], 'sent', 0, 'agent', 2),
@@ -551,7 +552,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
   const counts: Count[] = [
     {
       id: uid(),
-      name: 'Príncipe Real — pantry shelf',
+      name: tr('Príncipe Real — pantry shelf'),
       locationId: LX.id,
       status: 'review',
       blind: true,
@@ -563,7 +564,7 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
     },
     {
       id: uid(),
-      name: 'Marvila — monthly wine count',
+      name: tr('Marvila — monthly wine count'),
       locationId: WH.id,
       status: 'closed',
       blind: true,
@@ -575,11 +576,11 @@ export function createDemoSnapshot(opts: SeedOptions = {}): Snapshot {
 
   // Activity
   const events: ActivityEvent[] = [
-    { id: uid(), kind: 'receipt', title: 'Delivery from Padaria Estrela posted', detail: '5 lines · Príncipe Real', actor: team[2], createdAt: ts(now, 7, 14) },
-    { id: uid(), kind: 'agent', title: 'Operator drafted PO for Torrefação Lusa', detail: '3 lines · approved by Tiago Costa', actor: agent, createdAt: addDays(now, -2).toISOString() },
-    { id: uid(), kind: 'count', title: 'Count submitted for review', detail: 'Príncipe Real — pantry shelf · 2 variances', actor: team[1], createdAt: addDays(now, -1).toISOString() },
-    { id: uid(), kind: 'transfer', title: 'Transfer to Bonfim completed', detail: '14 lines from Marvila warehouse', actor: team[0], createdAt: addDays(now, -3).toISOString() },
-    { id: uid(), kind: 'member', title: 'Ana Ribeiro was invited as Viewer', detail: 'Accountant access', actor: team[3], createdAt: addDays(now, -6).toISOString() },
+    { id: uid(), kind: 'receipt', title: tr('Delivery from Padaria Estrela posted'), detail: tr('5 lines · Príncipe Real'), actor: team[2], createdAt: ts(now, 7, 14) },
+    { id: uid(), kind: 'agent', title: tr('Operator drafted PO for Torrefação Lusa'), detail: tr('3 lines · approved by Tiago Costa'), actor: agent, createdAt: addDays(now, -2).toISOString() },
+    { id: uid(), kind: 'count', title: tr('Count submitted for review'), detail: tr('Príncipe Real — pantry shelf · 2 variances'), actor: team[1], createdAt: addDays(now, -1).toISOString() },
+    { id: uid(), kind: 'transfer', title: tr('Transfer to Bonfim completed'), detail: tr('14 lines from Marvila warehouse'), actor: team[0], createdAt: addDays(now, -3).toISOString() },
+    { id: uid(), kind: 'member', title: tr('Ana Ribeiro was invited as Viewer'), detail: tr('Accountant access'), actor: team[3], createdAt: addDays(now, -6).toISOString() },
   ]
 
   const snapshot: Snapshot = {
@@ -620,13 +621,13 @@ export function createEmptySnapshot(opts: SeedOptions & { workspaceName: string;
 
 export function starterCategories(sector: Sector): Category[] {
   const map: Record<Sector, string[]> = {
-    grocery: ['Pantry', 'Fresh', 'Drinks', 'Household'],
-    cafe: ['Coffee', 'Pastry', 'Drinks', 'Packaging'],
-    retail: ['Apparel', 'Accessories', 'Home', 'Gifts'],
-    pharmacy: ['Personal care', 'Supplements', 'Baby', 'Dermocosmetics'],
-    hardware: ['Tools', 'Fixings', 'Electrical', 'Paint'],
-    ecommerce: ['Core products', 'Bundles', 'Packaging', 'Returns'],
-    other: ['General'],
+    grocery: [tr('Pantry'), tr('Fresh'), tr('Drinks'), tr('Household')],
+    cafe: [tr('Coffee'), tr('Pastry'), tr('Drinks'), tr('Packaging')],
+    retail: [tr('Apparel'), tr('Accessories'), tr('Home'), tr('Gifts')],
+    pharmacy: [tr('Personal care'), tr('Supplements'), tr('Baby'), tr('Dermocosmetics')],
+    hardware: [tr('Tools'), tr('Fixings'), tr('Electrical'), tr('Paint')],
+    ecommerce: [tr('Core products'), tr('Bundles'), tr('Packaging'), tr('Returns')],
+    other: [tr('General')],
   }
   const hues = [24, 200, 140, 320, 270, 50]
   return map[sector].map((name, i) => ({ id: uid(), name, hue: hues[i % hues.length], atCategory: 'M' }))

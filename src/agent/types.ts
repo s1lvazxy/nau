@@ -40,6 +40,8 @@ export interface ExecContext {
   actor: Actor
   canWrite: boolean
   dashboardId?: string | null
+  /** The installation can send email itself, so a sent order is queued for delivery */
+  mail?: boolean
   /** Who is asking: a person in the chat (default), the scheduled autopilot, or a standing rule */
   source?: ActionSource
 }

@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:site": "VITE_LANDING_ONLY=1 vite build && node scripts/site-finish.mjs",
     "start": "node --env-file-if-exists=.env .output/server/index.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "i18n": "node scripts/i18n-check.mjs",
     "test": "vitest run",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",

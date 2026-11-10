@@ -1,7 +1,9 @@
+import { num } from '~/lib/format'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeftIcon, ArrowRightIcon, BasketIcon, CarIcon, CoffeeIcon, FirstAidKitIcon, HammerIcon, PackageIcon, PlusIcon, ShoppingBagIcon, StorefrontIcon, TrashIcon, WarehouseIcon } from '@phosphor-icons/react'
 import { Logo } from '~/components/brand/logo'
+import { LangSwitch } from '~/components/lang-switch'
 import { Button } from '~/components/ui/button'
 import { Field, Input, NumberInput, Segmented } from '~/components/ui/form'
 import { Manifest, type Cargo } from '~/components/onboarding/manifest'
@@ -15,36 +17,37 @@ import { createDemoSnapshot, createEmptySnapshot } from '~/lib/seed'
 import { formatNIF, isValidNIF } from '~/lib/pt'
 import type { Location, Policy, Region, Sector, Snapshot } from '~/lib/types'
 import { cn, normalize, slugify, uid } from '~/lib/utils'
+import { tr } from '~/i18n'
 
 export const Route = createFileRoute('/onboarding')({
   ssr: false,
-  head: () => ({ meta: [{ title: 'Prepara o teu espaço — Nau' }] }),
+  head: () => ({ meta: [{ title: tr('Prepara o teu espaço — Nau') }] }),
   component: Onboarding,
 })
 
 const SECTORS: { value: Sector; label: string; icon: React.ReactNode }[] = [
-  { value: 'grocery', label: 'Mercearia e gourmet', icon: <BasketIcon size={20} /> },
-  { value: 'cafe', label: 'Café e restauração', icon: <CoffeeIcon size={20} /> },
-  { value: 'retail', label: 'Loja', icon: <ShoppingBagIcon size={20} /> },
-  { value: 'pharmacy', label: 'Farmácia e saúde', icon: <FirstAidKitIcon size={20} /> },
-  { value: 'hardware', label: 'Ferragens e materiais', icon: <HammerIcon size={20} /> },
-  { value: 'ecommerce', label: 'Loja online', icon: <PackageIcon size={20} /> },
+  { value: 'grocery', label: tr('Mercearia e gourmet'), icon: <BasketIcon size={20} /> },
+  { value: 'cafe', label: tr('Café e restauração'), icon: <CoffeeIcon size={20} /> },
+  { value: 'retail', label: tr('Loja'), icon: <ShoppingBagIcon size={20} /> },
+  { value: 'pharmacy', label: tr('Farmácia e saúde'), icon: <FirstAidKitIcon size={20} /> },
+  { value: 'hardware', label: tr('Ferragens e materiais'), icon: <HammerIcon size={20} /> },
+  { value: 'ecommerce', label: tr('Loja online'), icon: <PackageIcon size={20} /> },
 ]
 const REGIONS: { value: Region; label: string }[] = [
-  { value: 'continente', label: 'Continente' },
-  { value: 'madeira', label: 'Madeira' },
-  { value: 'acores', label: 'Açores' },
+  { value: 'continente', label: tr('Continente') },
+  { value: 'madeira', label: tr('Madeira') },
+  { value: 'acores', label: tr('Açores') },
 ]
-const NIF_KIND = (nif: string) => (/^[123]/.test(nif) ? 'Pessoa singular' : /^5/.test(nif) ? 'Empresa' : /^6/.test(nif) ? 'Entidade pública' : /^8/.test(nif) ? 'Empresário em nome individual' : 'Entidade')
+const NIF_KIND = (nif: string) => (/^[123]/.test(nif) ? tr('Pessoa singular') : /^5/.test(nif) ? tr('Empresa') : /^6/.test(nif) ? tr('Entidade pública') : /^8/.test(nif) ? tr('Empresário em nome individual') : tr('Entidade'))
 
 type Reach = 'ask' | 'reversible' | 'limit'
 const REACH: { value: Reach; title: string; body: string }[] = [
-  { value: 'ask', title: 'Pergunta sempre', body: 'O Operador prepara tudo e nada muda sem o teu sim.' },
-  { value: 'reversible', title: 'Faz o que se pode desfazer', body: 'Cria artigos, rascunhos de encomenda, contagens e regras. Fica tudo no registo, com um botão para desfazer. O dinheiro espera por ti.' },
-  { value: 'limit', title: 'Também encomenda, até um teto', body: 'Além disso, envia encomendas sozinho enquanto couberem no valor que definires.' },
+  { value: 'ask', title: tr('Pergunta sempre'), body: tr('O Operador prepara tudo e nada muda sem o teu sim.') },
+  { value: 'reversible', title: tr('Faz o que se pode desfazer'), body: tr('Cria artigos, rascunhos de encomenda, contagens e regras. Fica tudo no registo, com um botão para desfazer. O dinheiro espera por ti.') },
+  { value: 'limit', title: tr('Também encomenda, até um teto'), body: tr('Além disso, envia encomendas sozinho enquanto couberem no valor que definires.') },
 ]
 
-const TITLES = ['Como se chama o negócio?', 'De onde vêm os teus dados?', 'Últimos acertos']
+const TITLES = [tr('Como se chama o negócio?'), tr('De onde vêm os teus dados?'), tr('Últimos acertos')]
 
 function Progress({ step }: { step: number }) {
   // The eight rays of the mark light up as the manifest fills
@@ -114,7 +117,7 @@ function Onboarding() {
   const cargo = useMemo((): Cargo | null => {
     if (!hasData) return null
     const s = base({ workspaceName: name || 'Nau', ownerName: 'Nau', ownerEmail: 'nau@example.pt' })
-    const r = ingest(s, batch, { source: 'import', label: 'Importação', actor: { kind: 'user', name: 'Nau' }, setStock: true, postPurchases: true })
+    const r = ingest(s, batch, { source: 'import', label: tr('Importação'), actor: { kind: 'user', name: 'Nau' }, setStock: true, postPurchases: true })
     const after = applyChangeSet(s, r.cs)
     const cost = new Map(after.items.map((i) => [i.id, i.cost]))
     const dates = (batch.documents ?? []).map((d) => d.date).sort()
@@ -144,7 +147,7 @@ function Onboarding() {
       snap.workspace = { ...snap.workspace, id: uid(), name: owner.workspaceName, slug: slugify(owner.workspaceName), sector, region, nif: nifOk ? cleanNif : null, createdAt: new Date().toISOString(), settings: { ...snap.workspace.settings, policy } }
       snap.members = [{ ...snap.members[0], name: session.user.name, email: session.user.email }, ...snap.members.slice(1)]
       if (start === 'import' && hasData) {
-        const r = ingest(snap, batch, { source: 'import', label: 'Importação', actor: { kind: 'user', name: session.user.name }, setStock: true, postPurchases: true })
+        const r = ingest(snap, batch, { source: 'import', label: tr('Importação'), actor: { kind: 'user', name: session.user.name }, setStock: true, postPurchases: true })
         snap = applyChangeSet(snap, r.cs)
       }
       const id = await backend.createWorkspace(snap)
@@ -154,7 +157,7 @@ function Onboarding() {
       else void navigate({ to: '/app', search: { welcome: 1 } as never })
     } catch (e) {
       const m = e instanceof Error ? e.message : ''
-      setError(m || 'Não foi possível criar o espaço. Tenta de novo.')
+      setError(m || tr('Não foi possível criar o espaço. Tenta de novo.'))
       setBusy(false)
     }
   }
@@ -166,10 +169,11 @@ function Onboarding() {
       <header className="flex items-center justify-between px-6 py-5 sm:px-10">
         <Logo size={20} />
         <div className="flex items-center gap-3 text-[12.5px] text-ink-3">
+          <LangSwitch />
           <span className="hidden sm:inline">{session?.user.email}</span>
           {workspaces.length > 0 && (
             <button type="button" className="hover:text-ink" onClick={() => void navigate({ to: '/app' })}>
-              Cancelar
+              {tr('Cancelar')}
             </button>
           )}
         </div>
@@ -182,7 +186,7 @@ function Onboarding() {
               <h1 ref={heading} tabIndex={-1} className="text-[clamp(1.6rem,3vw,2.125rem)] leading-tight font-medium tracking-[-0.035em] text-balance text-ink outline-none">
                 {TITLES[step]}
               </h1>
-              <p className="mt-1 text-[13px] text-ink-3">Passo {step + 1} de 3{step === 1 && ' · é aqui que poupas as primeiras semanas'}</p>
+              <p className="mt-1 text-[13px] text-ink-3">{tr('Passo {0} de 3{1}', step + 1, step === 1 ? tr(' · é aqui que poupas as primeiras semanas') : '')}</p>
             </div>
           </div>
 
@@ -190,16 +194,16 @@ function Onboarding() {
             {step === 0 && (
               <div className="flex flex-col gap-7">
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label="Nome do negócio" htmlFor="ws">
-                    <Input id="ws" inputSize="lg" placeholder="Mercearia do Bairro" autoComplete="organization" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+                  <Field label={tr('Nome do negócio')} htmlFor="ws">
+                    <Input id="ws" inputSize="lg" placeholder={tr('Mercearia do Bairro')} autoComplete="organization" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
                   </Field>
-                  <Field label={<>NIF <span className="font-normal text-ink-4">opcional</span></>} htmlFor="nif" hint={cleanNif ? undefined : 'Vai nas encomendas e no ficheiro para a AT.'} error={cleanNif.length === 9 && !nifOk ? 'O dígito de controlo não bate certo.' : null}>
-                    <Input id="nif" inputSize="lg" inputMode="numeric" autoComplete="off" placeholder="9 dígitos" value={nif} onChange={(e) => setNif(formatNIF(e.target.value.replace(/\D/g, '').slice(0, 9)))} trailing={nifOk ? <span className="text-[12px] font-medium text-ok-ink">✓ {NIF_KIND(cleanNif)}</span> : cleanNif && cleanNif.length < 9 ? <span className="tabular text-[11.5px] text-ink-4">faltam {9 - cleanNif.length}</span> : null} />
+                  <Field label={<>NIF <span className="font-normal text-ink-4">{tr('opcional')}</span></>} htmlFor="nif" hint={cleanNif ? undefined : tr('Vai nas encomendas e no ficheiro para a AT.')} error={cleanNif.length === 9 && !nifOk ? tr('O dígito de controlo não bate certo.') : null}>
+                    <Input id="nif" inputSize="lg" inputMode="numeric" autoComplete="off" placeholder={tr('9 dígitos')} value={nif} onChange={(e) => setNif(formatNIF(e.target.value.replace(/\D/g, '').slice(0, 9)))} trailing={nifOk ? <span className="text-[12px] font-medium text-ok-ink">✓ {NIF_KIND(cleanNif)}</span> : cleanNif && cleanNif.length < 9 ? <span className="tabular text-[11.5px] text-ink-4">{tr('faltam {0}', 9 - cleanNif.length)}</span> : null} />
                   </Field>
                 </div>
                 <div>
-                  <p className="mb-2 text-[12.5px] font-medium text-ink-2">O que vendes?</p>
-                  <div role="radiogroup" aria-label="Tipo de negócio" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <p className="mb-2 text-[12.5px] font-medium text-ink-2">{tr('O que vendes?')}</p>
+                  <div role="radiogroup" aria-label={tr('Tipo de negócio')} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {SECTORS.map((s) => (
                       <button key={s.value} type="button" role="radio" aria-checked={sector === s.value} onClick={() => setSector(s.value)} className={cn('press flex items-center gap-3 rounded-[14px] bg-surface p-3.5 text-left text-[13.5px] transition-shadow duration-150', sector === s.value ? 'text-ink shadow-[0_0_0_2px_var(--accent-9)]' : 'text-ink-2 shadow-card hover:text-ink')}>
                         <span className={cn('shrink-0', sector === s.value ? 'text-accent' : 'text-ink-3')}>{s.icon}</span>
@@ -208,7 +212,7 @@ function Onboarding() {
                     ))}
                   </div>
                 </div>
-                <Field label="Região" hint="Define as taxas de IVA que aparecem primeiro.">
+                <Field label={tr('Região')} hint={tr('Define as taxas de IVA que aparecem primeiro.')}>
                   <Segmented value={region} onChange={setRegion} options={REGIONS} />
                 </Field>
               </div>
@@ -220,25 +224,25 @@ function Onboarding() {
               <div className="flex flex-col gap-9">
                 <section aria-labelledby="locs-h">
                   <h2 id="locs-h" className="text-[14px] font-medium text-ink">
-                    Onde guardas stock?
+                    {tr('Onde guardas stock?')}
                   </h2>
-                  <p className="mt-0.5 text-[12.5px] text-ink-3">Uma loja chega para começar. Acrescentas armazéns e carrinhas quando quiseres.</p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-3">{tr('Uma loja chega para começar. Acrescentas armazéns e carrinhas quando quiseres.')}</p>
                   <div className="mt-3 flex flex-col gap-2">
                     {locs.map((l, i) => (
                       <div key={l.id} className="flex flex-col gap-2.5 rounded-[14px] bg-surface p-3 shadow-card sm:flex-row sm:items-center">
-                        <Input inputSize="lg" className="flex-1" placeholder={i === 0 ? 'Loja de Alvalade' : 'Armazém'} value={l.name} onChange={(e) => setLocs(locs.map((x) => (x.id === l.id ? { ...x, name: e.target.value } : x)))} autoFocus={i === locs.length - 1 && !l.name} aria-label={`Nome do local ${i + 1}`} />
+                        <Input inputSize="lg" className="flex-1" placeholder={i === 0 ? tr('Loja de Alvalade') : tr('Armazém')} value={l.name} onChange={(e) => setLocs(locs.map((x) => (x.id === l.id ? { ...x, name: e.target.value } : x)))} autoFocus={i === locs.length - 1 && !l.name} aria-label={tr('Nome do local {0}', i + 1)} />
                         <Segmented
                           size="sm"
                           value={l.kind}
                           onChange={(k) => setLocs(locs.map((x) => (x.id === l.id ? { ...x, kind: k } : x)))}
                           options={[
-                            { value: 'store', label: 'Loja', icon: <StorefrontIcon size={13} /> },
-                            { value: 'warehouse', label: 'Armazém', icon: <WarehouseIcon size={13} /> },
-                            { value: 'van', label: 'Carrinha', icon: <CarIcon size={13} /> },
+                            { value: 'store', label: tr('Loja'), icon: <StorefrontIcon size={13} /> },
+                            { value: 'warehouse', label: tr('Armazém'), icon: <WarehouseIcon size={13} /> },
+                            { value: 'van', label: tr('Carrinha'), icon: <CarIcon size={13} /> },
                           ]}
                         />
                         {locs.length > 1 && (
-                          <button type="button" aria-label={`Remover o local ${l.name || i + 1}`} onClick={() => setLocs(locs.filter((x) => x.id !== l.id))} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-hover hover:text-bad-ink">
+                          <button type="button" aria-label={tr('Remover o local {0}', l.name || i + 1)} onClick={() => setLocs(locs.filter((x) => x.id !== l.id))} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-hover hover:text-bad-ink">
                             <TrashIcon size={15} />
                           </button>
                         )}
@@ -246,7 +250,7 @@ function Onboarding() {
                     ))}
                     {locs.length < 5 && (
                       <button type="button" onClick={() => setLocs([...locs, { id: uid(), name: '', kind: 'warehouse' }])} className="flex h-11 items-center justify-center gap-2 rounded-[14px] text-[13px] text-ink-3 outline-1 -outline-offset-1 outline-[var(--gray-a6)] outline-dashed hover:text-ink">
-                        <PlusIcon size={13} /> Outro local
+                        <PlusIcon size={13} /> {tr('Outro local')}
                       </button>
                     )}
                   </div>
@@ -254,9 +258,9 @@ function Onboarding() {
 
                 <section aria-labelledby="reach-h">
                   <h2 id="reach-h" className="text-[14px] font-medium text-ink">
-                    Até onde pode o Operador ir sozinho?
+                    {tr('Até onde pode o Operador ir sozinho?')}
                   </h2>
-                  <p className="mt-0.5 text-[12.5px] text-ink-3">Mudas isto quando quiseres, no Autopiloto. Ele nunca alarga os próprios limites.</p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-3">{tr('Mudas isto quando quiseres, no Autopiloto. Ele nunca alarga os próprios limites.')}</p>
                   <div role="radiogroup" aria-labelledby="reach-h" className="mt-3 flex flex-col gap-2">
                     {REACH.map((r) => {
                       const on = reach === r.value
@@ -267,16 +271,16 @@ function Onboarding() {
                             <span>
                               <span className="flex items-center gap-2 text-[14px] font-medium text-ink">
                                 {r.title}
-                                {r.value === 'reversible' && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-ink">Recomendado</span>}
+                                {r.value === 'reversible' && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-ink">{tr('Recomendado')}</span>}
                               </span>
                               <span className="mt-0.5 block text-[12.5px] leading-relaxed text-ink-3">{r.body}</span>
                             </span>
                           </button>
                           {on && r.value === 'limit' && (
                             <label className="flex items-center gap-3 border-t border-line px-4 py-3 text-[13px] text-ink-2">
-                              Teto por encomenda
-                              <NumberInput value={limit} min={0} step={50} onChange={(v) => setLimit(Math.max(0, Math.round(v)))} className="w-24" aria-label="Teto por encomenda, em euros" />
-                              <span className="text-ink-3">€ · até {(limit * 3).toLocaleString('pt-PT')} € por dia</span>
+                              {tr('Teto por encomenda')}
+                              <NumberInput value={limit} min={0} step={50} onChange={(v) => setLimit(Math.max(0, Math.round(v)))} className="w-24" aria-label={tr('Teto por encomenda, em euros')} />
+                              <span className="text-ink-3">{tr('€ · até {0} € por dia', num(limit * 3))}</span>
                             </label>
                           )}
                         </div>
@@ -298,21 +302,21 @@ function Onboarding() {
 
           <div className="mt-auto flex items-center justify-between gap-3 pt-10">
             <Button variant="ghost" size="lg" onClick={() => setStep((s) => s - 1)} disabled={step === 0 || busy} icon={<ArrowLeftIcon size={14} />}>
-              Voltar
+              {tr('Voltar')}
             </Button>
             <div className="flex items-center gap-2">
               {step === 1 && start === 'import' && !hasData && !connectAfter && (
                 <Button variant="ghost" size="lg" onClick={() => (setStart('empty'), setStep(2))}>
-                  Importar depois
+                  {tr('Importar depois')}
                 </Button>
               )}
               {step < 2 ? (
                 <Button variant="primary" size="lg" disabled={!canNext} loading={step === 1 && reading} onClick={() => setStep((s) => s + 1)} trailing={<ArrowRightIcon size={14} />}>
-                  Continuar
+                  {tr('Continuar')}
                 </Button>
               ) : (
                 <Button variant="primary" size="lg" disabled={!canNext} loading={busy} onClick={() => void create()}>
-                  {busy ? 'A carregar a bordo…' : 'Criar o espaço'}
+                  {busy ? tr('A carregar a bordo…') : tr('Criar o espaço')}
                 </Button>
               )}
             </div>
@@ -321,7 +325,7 @@ function Onboarding() {
 
         <div className="hidden lg:block">
           <div className="sticky top-8">
-            <p className="mb-2 px-1 text-[12px] text-ink-3">Manifesto · o que vai entrar a bordo</p>
+            <p className="mb-2 px-1 text-[12px] text-ink-3">{tr('Manifesto · o que vai entrar a bordo')}</p>
             {manifest}
           </div>
         </div>

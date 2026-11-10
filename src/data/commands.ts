@@ -17,6 +17,7 @@ import { generateProposals, itemStats } from '~/lib/analytics'
 import { addDays, eur, isoDay, qty as fmtQty } from '~/lib/format'
 import { indexBy, round, uid } from '~/lib/utils'
 import { mergeChangeSets, type ChangeSet } from './changeset'
+import { tr } from '~/i18n'
 
 const nowIso = () => new Date().toISOString()
 
@@ -103,7 +104,7 @@ export function postReceipt(s: Snapshot, r: Receipt, actor: Actor): ChangeSet {
   const sup = s.suppliers.find((x) => x.id === r.supplierId)
   const loc = s.locations.find((x) => x.id === r.locationId)
   const total = lines.reduce((a, l) => a + l.qty * l.unitCost, 0)
-  cs.events = [event('receipt', `Received ${sup ? `delivery from ${sup.name}` : r.number}`, actor, `${lines.length} lines · ${eur(total)} · ${loc?.name ?? ''}`, `/app/receive`)]
+  cs.events = [event('receipt', tr('Received {0}', sup ? tr('delivery from {0}', sup.name) : r.number), actor, tr('{0} lines · {1} · {2}', lines.length, eur(total), loc?.name ?? ''), `/app/receive`)]
   return cs
 }
 
@@ -117,7 +118,7 @@ export function receiptFromPO(s: Snapshot, po: PurchaseOrder): Receipt {
     docRef: null,
     lines: po.lines
       .filter((l) => l.qty - l.received > 0)
-      .map((l) => ({ id: uid(), itemId: l.itemId, description: items[l.itemId]?.name ?? 'Item', qty: round(l.qty - l.received, 3), unitCost: l.unitCost, confidence: 1, previousCost: items[l.itemId]?.cost ?? null })),
+      .map((l) => ({ id: uid(), itemId: l.itemId, description: items[l.itemId]?.name ?? tr('Item'), qty: round(l.qty - l.received, 3), unitCost: l.unitCost, confidence: 1, previousCost: items[l.itemId]?.cost ?? null })),
   })
 }
 
@@ -125,7 +126,7 @@ export function receiptFromPO(s: Snapshot, po: PurchaseOrder): Receipt {
 
 export function createPO(
   s: Snapshot,
-  input: { supplierId: string; locationId?: string; lines: { itemId: string; qty: number; unitCost: number }[]; status?: PurchaseOrder['status']; createdBy?: 'user' | 'agent'; note?: string | null },
+  input: { supplierId: string; locationId?: string; lines: { itemId: string; qty: number; unitCost: number }[]; status?: PurchaseOrder['status']; createdBy?: 'user' | 'agent'; note?: string | null; email?: boolean },
   actor: Actor,
 ): { cs: ChangeSet; po: PurchaseOrder } {
   const sup = s.suppliers.find((x) => x.id === input.supplierId)
@@ -142,13 +143,14 @@ export function createPO(
     note: input.note ?? null,
     createdAt: nowIso(),
     sentAt: status === 'sent' ? nowIso() : null,
+    ...(status === 'sent' && input.email && sup?.email ? queueEmail() : {}),
   }
   const total = po.lines.reduce((a, l) => a + l.qty * l.unitCost, 0)
   return {
     po,
     cs: {
       upserts: { orders: [po] },
-      events: [event('order', `${status === 'sent' ? 'Sent' : 'Drafted'} ${po.number} to ${sup?.name ?? 'supplier'}`, actor, `${po.lines.length} lines · ${eur(total)}`, `/app/orders/${po.id}`)],
+      events: [event('order', (status === 'sent' ? tr('Sent {0} to {1}', po.number, sup?.name ?? tr('supplier')) : tr('Drafted {0} to {1}', po.number, sup?.name ?? tr('supplier'))), actor, tr('{0} lines · {1}', po.lines.length, eur(total)), `/app/orders/${po.id}`)],
     },
   }
 }
@@ -178,14 +180,18 @@ export function updatePO(po: PurchaseOrder): ChangeSet {
   return { upserts: { orders: [po] } }
 }
 
-export function sendPO(s: Snapshot, po: PurchaseOrder, actor: Actor): ChangeSet {
+/** Marks an order for the server to email. Each time it is queued it gets a new stamp, so a retry is a new attempt. */
+export const queueEmail = (): Pick<PurchaseOrder, 'emailStatus' | 'emailQueuedAt' | 'emailError'> => ({ emailStatus: 'queued', emailQueuedAt: nowIso(), emailError: null })
+
+/** `email: true` queues the order for the server to email (only when the installation has mail configured). */
+export function sendPO(s: Snapshot, po: PurchaseOrder, actor: Actor, opts: { email?: boolean } = {}): ChangeSet {
   const sup = s.suppliers.find((x) => x.id === po.supplierId)
-  const next: PurchaseOrder = { ...po, status: 'sent', sentAt: nowIso(), expectedOn: po.expectedOn ?? isoDay(addDays(new Date(), sup?.leadTimeDays ?? 5)) }
-  return { upserts: { orders: [next] }, events: [event('order', `Sent ${po.number} to ${sup?.name ?? 'supplier'}`, actor, sup?.email ? `Emailed to ${sup.email}` : null, `/app/orders/${po.id}`)] }
+  const next: PurchaseOrder = { ...po, status: 'sent', sentAt: nowIso(), expectedOn: po.expectedOn ?? isoDay(addDays(new Date(), sup?.leadTimeDays ?? 5)), ...(opts.email && sup?.email ? queueEmail() : {}) }
+  return { upserts: { orders: [next] }, events: [event('order', tr('Sent {0} to {1}', po.number, sup?.name ?? tr('supplier')), actor, sup?.email ? tr('Emailed to {0}', sup.email) : null, `/app/orders/${po.id}`)] }
 }
 
 export function cancelPO(po: PurchaseOrder, actor: Actor): ChangeSet {
-  return { upserts: { orders: [{ ...po, status: 'cancelled' }] }, events: [event('order', `Cancelled ${po.number}`, actor)] }
+  return { upserts: { orders: [{ ...po, status: 'cancelled' }] }, events: [event('order', tr('Cancelled {0}', po.number), actor)] }
 }
 
 export function poEmail(s: Snapshot, po: PurchaseOrder) {
@@ -209,7 +215,7 @@ export function adjustStock(s: Snapshot, input: { itemId: string; locationId: st
   const loc = s.locations.find((x) => x.id === input.locationId)
   return {
     movements: [{ id: uid(), itemId: input.itemId, locationId: input.locationId, type: input.type ?? 'adjustment', qty: delta, unitCost: it?.cost ?? null, note: input.reason, actor, createdAt: nowIso() }],
-    events: [event('adjustment', `${delta > 0 ? 'Added' : 'Removed'} ${fmtQty(Math.abs(delta), it?.unit)} ${it?.name ?? ''}`, actor, `${loc?.name ?? ''} · ${input.reason}`, `/app/items/${input.itemId}`)],
+    events: [event('adjustment', `${delta > 0 ? tr('Added') : tr('Removed')} ${fmtQty(Math.abs(delta), it?.unit)} ${it?.name ?? ''}`, actor, `${loc?.name ?? ''} · ${input.reason}`, `/app/items/${input.itemId}`)],
   }
 }
 
@@ -225,7 +231,7 @@ export function transferStock(s: Snapshot, input: { itemId: string; from: string
       { id: uid(), itemId: input.itemId, locationId: input.from, type: 'transfer', qty: -input.qty, unitCost: it?.cost ?? null, actor, createdAt: at, groupId: g, ref, note: input.note ?? null },
       { id: uid(), itemId: input.itemId, locationId: input.to, type: 'transfer', qty: input.qty, unitCost: it?.cost ?? null, actor, createdAt: at, groupId: g, ref, note: input.note ?? null },
     ],
-    events: [event('transfer', `Moved ${fmtQty(input.qty, it?.unit)} ${it?.name ?? ''}`, actor, `${from?.name} → ${to?.name}`, `/app/items/${input.itemId}`)],
+    events: [event('transfer', tr('Moved {0} {1}', fmtQty(input.qty, it?.unit), it?.name ?? ''), actor, `${from?.name} → ${to?.name}`, `/app/items/${input.itemId}`)],
   }
 }
 
@@ -236,8 +242,8 @@ export function revertMovement(s: Snapshot, movementId: string, actor: Actor): C
   const g = uid()
   const it = s.items.find((x) => x.id === m.itemId)
   return {
-    movements: group.map((x) => ({ ...x, id: uid(), qty: -x.qty, revertsId: x.id, groupId: g, actor, createdAt: nowIso(), note: `Reverted ${x.type}`, batchCode: x.qty < 0 ? x.batchCode : null })),
-    events: [event('revert', `Reverted a ${m.type} of ${it?.name ?? 'an item'}`, actor, null, `/app/items/${m.itemId}`)],
+    movements: group.map((x) => ({ ...x, id: uid(), qty: -x.qty, revertsId: x.id, groupId: g, actor, createdAt: nowIso(), note: tr('Reverted {0}', x.type), batchCode: x.qty < 0 ? x.batchCode : null })),
+    events: [event('revert', tr('Reverted a {0} of {1}', m.type, it?.name ?? tr('an item')), actor, null, `/app/items/${m.itemId}`)],
   }
 }
 
@@ -273,10 +279,10 @@ export function saveItem(s: Snapshot, item: Item, actor: Actor, opening?: { loca
   const cat = s.categories.find((c) => c.id === item.categoryId)
   const cs: ChangeSet = {
     upserts: { items: [{ ...item, hue: cat?.hue ?? item.hue }] },
-    events: isNew ? [event('item', `Added ${item.name}`, actor, item.sku, `/app/items/${item.id}`)] : undefined,
+    events: isNew ? [event('item', tr('Added {0}', item.name), actor, item.sku, `/app/items/${item.id}`)] : undefined,
   }
   if (isNew && opening && opening.qty) {
-    cs.movements = [{ id: uid(), itemId: item.id, locationId: opening.locationId, type: 'count', qty: opening.qty, unitCost: item.cost, actor, createdAt: nowIso(), note: 'Opening stock' }]
+    cs.movements = [{ id: uid(), itemId: item.id, locationId: opening.locationId, type: 'count', qty: opening.qty, unitCost: item.cost, actor, createdAt: nowIso(), note: tr('Opening stock') }]
   }
   return cs
 }
@@ -284,7 +290,7 @@ export function saveItem(s: Snapshot, item: Item, actor: Actor, opening?: { loca
 export function archiveItems(s: Snapshot, ids: string[], archived: boolean, actor: Actor): ChangeSet {
   const set = new Set(ids)
   const items = s.items.filter((x) => set.has(x.id)).map((x) => ({ ...x, archived }))
-  return { upserts: { items }, events: [event('item', `${archived ? 'Archived' : 'Restored'} ${items.length} item${items.length > 1 ? 's' : ''}`, actor)] }
+  return { upserts: { items }, events: [event('item', (archived ? items.length > 1 ? tr('Archived {0} items', items.length) : tr('Archived {0} item', items.length) : items.length > 1 ? tr('Restored {0} items', items.length) : tr('Restored {0} item', items.length)), actor)] }
 }
 
 export function saveSupplier(sup: Supplier): ChangeSet {
@@ -303,7 +309,7 @@ export function startCount(s: Snapshot, input: { name: string; locationId: strin
     createdAt: nowIso(),
     lines: input.itemIds.map((itemId) => ({ itemId, expected: onHandAt(s, itemId, input.locationId), counted: null })),
   }
-  return { count, cs: { upserts: { counts: [count] }, events: [event('count', `Started count “${input.name}”`, actor, `${count.lines.length} items`, `/app/counts/${count.id}`)] } }
+  return { count, cs: { upserts: { counts: [count] }, events: [event('count', tr('Started count “{0}”', input.name), actor, tr('{0} items', count.lines.length), `/app/counts/${count.id}`)] } }
 }
 
 export function saveCount(count: Count): ChangeSet {
@@ -319,13 +325,13 @@ export function closeCount(s: Snapshot, count: Count, actor: Actor): ChangeSet {
     const live = onHandAt(s, l.itemId, count.locationId)
     const delta = round(l.counted - live, 3)
     if (!delta) continue
-    movements.push({ id: uid(), itemId: l.itemId, locationId: count.locationId, type: 'count', qty: delta, unitCost: items[l.itemId]?.cost ?? null, actor, createdAt: nowIso(), groupId: count.id, ref: count.name, note: 'Count variance' })
+    movements.push({ id: uid(), itemId: l.itemId, locationId: count.locationId, type: 'count', qty: delta, unitCost: items[l.itemId]?.cost ?? null, actor, createdAt: nowIso(), groupId: count.id, ref: count.name, note: tr('Count variance') })
   }
   const value = movements.reduce((a, m) => a + m.qty * (m.unitCost ?? 0), 0)
   return {
     upserts: { counts: [{ ...count, status: 'closed', closedAt: nowIso() }] },
     movements,
-    events: [event('count', `Closed count “${count.name}”`, actor, `${movements.length} variance${movements.length === 1 ? '' : 's'} · ${eur(value)}`, `/app/counts/${count.id}`)],
+    events: [event('count', tr('Closed count “{0}”', count.name), actor, (movements.length === 1 ? tr('{0} variance · {1}', movements.length, eur(value)) : tr('{0} variances · {1}', movements.length, eur(value))), `/app/counts/${count.id}`)],
   }
 }
 
@@ -346,7 +352,7 @@ export function runAutopilot(s: Snapshot): ChangeSet {
   }
 }
 
-export function approveProposal(s: Snapshot, p: Proposal, actor: Actor, opts: { send?: boolean } = {}): { cs: ChangeSet; link?: string; message: string } {
+export function approveProposal(s: Snapshot, p: Proposal, actor: Actor, opts: { send?: boolean; email?: boolean } = {}): { cs: ChangeSet; link?: string; message: string } {
   const resolved: Proposal = { ...p, status: 'approved', resolvedAt: nowIso() }
   const base: ChangeSet = { upserts: { proposals: [resolved] } }
   const pl = p.payload as Record<string, unknown>
@@ -359,43 +365,44 @@ export function approveProposal(s: Snapshot, p: Proposal, actor: Actor, opts: { 
           locationId: pl.locationId as string,
           lines: pl.lines as { itemId: string; qty: number; unitCost: number }[],
           status: opts.send ? 'sent' : 'draft',
+          email: opts.email,
           createdBy: 'agent',
-          note: 'Drafted by Operator from the reorder autopilot.',
+          note: tr('Drafted by Operator from the reorder autopilot.'),
         },
         actor,
       )
-      return { cs: mergeChangeSets(base, cs), link: `/app/orders/${po.id}`, message: `${po.number} ${opts.send ? 'sent' : 'drafted'}` }
+      return { cs: mergeChangeSets(base, cs), link: `/app/orders/${po.id}`, message: `${po.number} ${opts.send ? tr('sent') : tr('drafted')}` }
     }
     case 'transfer': {
-      const cs = transferStock(s, { itemId: pl.itemId as string, from: pl.from as string, to: pl.to as string, qty: pl.qty as number, note: 'Suggested by autopilot' }, actor)
-      return { cs: mergeChangeSets(base, cs), message: 'Transfer recorded' }
+      const cs = transferStock(s, { itemId: pl.itemId as string, from: pl.from as string, to: pl.to as string, qty: pl.qty as number, note: tr('Suggested by autopilot') }, actor)
+      return { cs: mergeChangeSets(base, cs), message: tr('Transfer recorded') }
     }
     case 'price': {
       const it = s.items.find((x) => x.id === pl.itemId)
-      if (!it) return { cs: base, message: 'Done' }
+      if (!it) return { cs: base, message: tr('Done') }
       return {
-        cs: mergeChangeSets(base, { upserts: { items: [{ ...it, price: pl.newPrice as number }] }, events: [event('price', `Updated price of ${it.name} to ${eur(pl.newPrice as number)}`, actor)] }),
-        message: 'Price updated',
+        cs: mergeChangeSets(base, { upserts: { items: [{ ...it, price: pl.newPrice as number }] }, events: [event('price', tr('Updated price of {0} to {1}', it.name, eur(pl.newPrice as number)), actor)] }),
+        message: tr('Price updated'),
       }
     }
     case 'count': {
-      const { cs, count } = startCount(s, { name: 'Spot count — high-value items', locationId: pl.locationId as string, itemIds: pl.itemIds as string[] }, actor)
-      return { cs: mergeChangeSets(base, cs), link: `/app/counts/${count.id}`, message: 'Count started' }
+      const { cs, count } = startCount(s, { name: tr('Spot count — high-value items'), locationId: pl.locationId as string, itemIds: pl.itemIds as string[] }, actor)
+      return { cs: mergeChangeSets(base, cs), link: `/app/counts/${count.id}`, message: tr('Count started') }
     }
     case 'deadstock': {
       const ids = new Set(pl.itemIds as string[])
       const items = s.items.filter((x) => ids.has(x.id)).map((x) => ({ ...x, tags: Array.from(new Set([...x.tags, 'clearance'])) }))
-      return { cs: mergeChangeSets(base, { upserts: { items }, events: [event('clearance', `Marked ${items.length} items for clearance`, actor, `${pl.discount}% suggested`)] }), message: 'Marked for clearance' }
+      return { cs: mergeChangeSets(base, { upserts: { items }, events: [event('clearance', tr('Marked {0} items for clearance', items.length), actor, tr('{0}% suggested', String(pl.discount)))] }), message: tr('Marked for clearance') }
     }
     case 'markdown': {
       const it = s.items.find((x) => x.id === pl.itemId)
       return {
-        cs: mergeChangeSets(base, { events: [event('markdown', `Markdown ${pl.discount}% on ${it?.name ?? 'item'}`, actor, `${pl.qty} units before expiry`)] }),
-        message: 'Markdown noted — print labels from the item page',
+        cs: mergeChangeSets(base, { events: [event('markdown', tr('Markdown {0}% on {1}', String(pl.discount), it?.name ?? tr('item')), actor, tr('{0} units before expiry', String(pl.qty)))] }),
+        message: tr('Markdown noted — print labels from the item page'),
       }
     }
     default:
-      return { cs: base, message: 'Approved' }
+      return { cs: base, message: tr('Approved') }
   }
 }
 
@@ -424,7 +431,7 @@ export function importSales(s: Snapshot, lines: { code: string; qty: number; dat
     }
     movements.push({ id: uid(), itemId: it.id, locationId, type: l.qty >= 0 ? 'sale' : 'return', qty: -l.qty, unitCost: it.cost, actor, createdAt: new Date(l.date + 'T19:00:00').toISOString(), ref: 'SAF-T' })
   }
-  const cs: ChangeSet = { movements, events: [event('import', `Imported ${movements.length} sales lines from SAF-T`, actor, unmatched.size ? `${unmatched.size} product codes not found` : null)] }
+  const cs: ChangeSet = { movements, events: [event('import', tr('Imported {0} sales lines from SAF-T', movements.length), actor, unmatched.size ? tr('{0} product codes not found', unmatched.size) : null)] }
   return { cs, matched: movements.length, unmatched: [...unmatched] }
 }
 
@@ -468,10 +475,10 @@ export function itemsFromCSV(s: Snapshot, rows: Record<string, string>[], actor:
     else {
       created++
       const q = n(pick(r, 'stock', 'qty', 'quantidade', 'existências', 'existencias'))
-      if (q) movements.push({ id: uid(), itemId: item.id, locationId: location, type: 'count', qty: q, unitCost: item.cost, actor, createdAt: nowIso(), note: 'Imported opening stock' })
+      if (q) movements.push({ id: uid(), itemId: item.id, locationId: location, type: 'count', qty: q, unitCost: item.cost, actor, createdAt: nowIso(), note: tr('Imported opening stock') })
     }
   }
-  return { cs: { upserts: { items }, movements, events: [event('import', `Imported ${created + updated} items from CSV`, actor, `${created} new · ${updated} updated`)] }, created, updated }
+  return { cs: { upserts: { items }, movements, events: [event('import', tr('Imported {0} items from CSV', created + updated), actor, tr('{0} new · {1} updated', created, updated))] }, created, updated }
 }
 
 export function stockValueOf(s: Snapshot, itemId: string) {

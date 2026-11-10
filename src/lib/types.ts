@@ -206,6 +206,11 @@ export interface PurchaseOrder {
   note?: string | null
   createdAt: string
   sentAt?: string | null
+  /** Set when the installation sends email itself: queued by whoever sent the order, then delivered by the server */
+  emailStatus?: 'queued' | 'sent' | 'failed' | null
+  emailQueuedAt?: string | null
+  emailedAt?: string | null
+  emailError?: string | null
 }
 
 export interface CountLine {

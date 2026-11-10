@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import Anthropic from '@anthropic-ai/sdk'
 import { SYSTEM_PROMPT, toolDefinitions } from '~/agent/schema'
 import { authorizeModelCall, json, sameOrigin } from '~/server/guard'
+import { tr } from '~/i18n'
 
 const MODEL = process.env.NAU_AGENT_MODEL || 'claude-opus-5-5'
 const TOOLS = toolDefinitions()
@@ -15,9 +16,9 @@ function enabled(mode: string | null) {
 
 function friendly(e: unknown) {
   if (e instanceof Anthropic.RateLimitError) return 'Operator is busy right now. Try again in a minute.'
-  if (e instanceof Anthropic.AuthenticationError) return 'Operator isn’t configured correctly (API key).'
-  if (e instanceof Anthropic.BadRequestError) return 'Operator couldn’t read that conversation. Start a new chat.'
-  if (e instanceof Anthropic.APIConnectionError) return 'Couldn’t reach the model. Check the connection and try again.'
+  if (e instanceof Anthropic.AuthenticationError) return tr('Operator isn’t configured correctly (API key).')
+  if (e instanceof Anthropic.BadRequestError) return tr('Operator couldn’t read that conversation. Start a new chat.')
+  if (e instanceof Anthropic.APIConnectionError) return tr('Couldn’t reach the model. Check the connection and try again.')
   if (e instanceof Anthropic.APIError) return `Operator error (${e.status ?? 'unknown'}).`
   return 'Something went wrong.'
 }
@@ -39,19 +40,19 @@ export const Route = createFileRoute('/api/agent')({
       },
       POST: async ({ request }) => {
         const mode = request.headers.get('x-nau-mode')
-        if (!enabled(mode)) return json({ error: 'Operator model is not configured' }, 503)
-        if (!sameOrigin(request)) return json({ error: 'Forbidden' }, 403)
+        if (!enabled(mode)) return json({ error: tr('Operator model is not configured') }, 503)
+        if (!sameOrigin(request)) return json({ error: tr('Forbidden') }, 403)
         const auth = await authorizeModelCall(request, 'agent')
         if (!auth.ok) return auth.res
         const raw = await request.text()
-        if (raw.length > MAX_BODY) return json({ error: 'Conversation too long — start a new chat.' }, 413)
+        if (raw.length > MAX_BODY) return json({ error: tr('Conversation too long — start a new chat.') }, 413)
         let messages: unknown
         try {
           messages = (JSON.parse(raw) as { messages: unknown }).messages
         } catch {
-          return json({ error: 'Invalid JSON' }, 400)
+          return json({ error: tr('Invalid JSON') }, 400)
         }
-        if (!validMessages(messages)) return json({ error: 'Invalid conversation' }, 400)
+        if (!validMessages(messages)) return json({ error: tr('Invalid conversation') }, 400)
 
         const client = new Anthropic()
         const enc = new TextEncoder()

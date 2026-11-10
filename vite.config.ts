@@ -5,7 +5,15 @@ import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 import { wgslVitePlugin } from '@vgpu/wgsl/loader-vite'
 
+/**
+ * `VITE_LANDING_ONLY=1 pnpm build` makes the static website: the landing page in both languages, as plain files.
+ * GitHub Pages serves a project from https://<user>.github.io/<repo>/, so everything hangs under that path.
+ */
+const landingOnly = process.env.VITE_LANDING_ONLY === '1'
+const base = landingOnly ? (process.env.NAU_BASE ?? '/nau/') : '/'
+
 export default defineConfig({
+  base,
   server: { port: 3100, strictPort: true },
   resolve: { tsconfigPaths: true },
   optimizeDeps: {
@@ -19,7 +27,7 @@ export default defineConfig({
   plugins: [
     wgslVitePlugin(),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart(landingOnly ? { prerender: { enabled: true, crawlLinks: false, autoStaticPathsDiscovery: false, autoSubfolderIndex: false, failOnError: true }, pages: [{ path: '/' }, { path: '/en' }] } : {}),
     nitro({
       routeRules: {
         '/**': {

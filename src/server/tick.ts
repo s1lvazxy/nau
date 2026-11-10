@@ -1,6 +1,7 @@
 import { runWorkspace, type WorkspaceRun } from './agent-run'
 import { admin } from './db'
 import { sync } from './integrations'
+import { deliverOrderEmails } from './mail'
 import { deliverWebhooks } from './webhooks-out'
 
 const MIN = 60_000
@@ -12,7 +13,7 @@ const MIN = 60_000
  */
 export async function tick(now = new Date()) {
   const started = Date.now()
-  const out = { synced: 0, syncErrors: [] as string[], workspaces: [] as WorkspaceRun[], webhooks: { delivered: 0, failed: 0 } }
+  const out = { synced: 0, syncErrors: [] as string[], workspaces: [] as WorkspaceRun[], webhooks: { delivered: 0, failed: 0 }, mail: { sent: 0, failed: 0 } }
   const touched = new Set<string>()
 
   const { data: due } = await admin()
@@ -56,6 +57,7 @@ export async function tick(now = new Date()) {
     }
   }
 
+  out.mail = await deliverOrderEmails().catch(() => ({ sent: 0, failed: 0 }))
   out.webhooks = await deliverWebhooks()
   return { ...out, ms: Date.now() - started }
 }
